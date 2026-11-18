@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#24406e">
+<meta name="description" content="记数字、记单词、记古诗词、记短文的记忆训练工具，手机电脑通用，无需联网">
+<title>记忆法训练助手</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: "Noto Sans CJK SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: #f2f4f8; color: #243044; line-height: 1.6; padding-bottom: 40px;
+}
+header {
+  background: #24406e; color: #fff; padding: 14px 16px; position: sticky; top: 0; z-index: 20;
+}
+header h1 { font-size: 18px; font-weight: 700; }
+header p { font-size: 12px; opacity: .85; }
+nav {
+  display: flex; gap: 6px; padding: 10px 12px; overflow-x: auto; background: #fff;
+  border-bottom: 1px solid #dfe4ee; position: sticky; top: 0; z-index: 19;
+}
+nav button {
+  white-space: nowrap; border: 1px solid #dfe4ee; background: #fff; color: #24406e;
+  padding: 8px 14px; border-radius: 8px; font-size: 14px; cursor: pointer;
+}
+nav button.active { background: #24406e; color: #fff; border-color: #24406e; }
+main { padding: 14px 12px; max-width: 900px; margin: 0 auto; }
+.card {
+  background: #fff; border: 1px solid #e2e8f2; border-radius: 10px; padding: 14px;
+  margin-bottom: 14px;
+}
+h2 { font-size: 17px; color: #24406e; margin-bottom: 8px; }
+h3 { font-size: 15px; color: #24406e; margin: 10px 0 6px; }
+.muted { color: #6b7688; font-size: 13px; }
+.tip { color: #1a6b3c; font-size: 13px; margin-top: 6px; }
+.warn { color: #8a4b00; font-size: 13px; margin-top: 6px; }
+.err { color: #b00000; font-size: 13px; margin-top: 6px; }
+.big { font-size: 22px; font-weight: 700; text-align: center; color: #24406e; margin: 10px 0; }
+.q { font-size: 20px; font-weight: 700; text-align: center; color: #24406e; margin: 10px 0; word-break: break-word; }
+button.act {
+  background: #24406e; color: #fff; border: none; border-radius: 8px; padding: 10px 16px;
+  font-size: 14px; cursor: pointer; margin: 4px 4px 4px 0;
+}
+button.act:active { opacity: .8; }
+button.ghost {
+  background: #fff; color: #24406e; border: 1px solid #c9d3e6; border-radius: 8px;
+  padding: 10px 16px; font-size: 14px; cursor: pointer; margin: 4px 4px 4px 0;
+}
+button.green { background: #1a6b3c; color: #fff; border: none; border-radius: 8px; padding: 10px 16px; font-size: 14px; cursor: pointer; margin: 4px 4px 4px 0; }
+button.red { background: #b00000; color: #fff; border: none; border-radius: 8px; padding: 10px 16px; font-size: 14px; cursor: pointer; margin: 4px 4px 4px 0; }
+input, select {
+  width: 100%; padding: 10px 12px; border: 1px solid #c9d3e6; border-radius: 8px;
+  font-size: 15px; margin: 6px 0; background: #fff;
+}
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 6px; }
+.grid .cell {
+  background: #eef2fa; border: 1px solid #d5deef; border-radius: 8px; padding: 8px 4px;
+  text-align: center; font-size: 13px;
+}
+.grid .cell.done { background: #1a6b3c; color: #fff; border-color: #1a6b3c; }
+.grid .cell.err { background: #fde3e3; border-color: #b00000; }
+.cellbtn {
+  background: #eef2fa; border: 1px solid #d5deef; border-radius: 8px; padding: 12px 6px;
+  font-size: 14px; cursor: pointer; min-height: 44px;
+}
+.cellbtn.done { background: #1a6b3c; color: #fff; border-color: #1a6b3c; }
+.row { display: flex; flex-wrap: wrap; gap: 6px; }
+.list { max-height: 260px; overflow: auto; border: 1px solid #e2e8f2; border-radius: 8px; }
+.list div { padding: 8px 10px; border-bottom: 1px solid #eef2fa; font-size: 14px; cursor: pointer; }
+.list div:active { background: #eef2fa; }
+.poem-lines { white-space: pre-wrap; font-size: 16px; font-weight: 600; }
+.para { white-space: pre-wrap; margin: 6px 0; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { border: 1px solid #dfe4ee; padding: 6px 8px; text-align: left; }
+th { background: #eef2fa; }
+.scroll { max-height: 300px; overflow: auto; }
+.home-entry {
+  display: block; background: #fff; border: 1px solid #e2e8f2; border-radius: 10px;
+  padding: 14px; margin-bottom: 10px; cursor: pointer; text-decoration: none; color: inherit;
+}
+.home-entry b { color: #24406e; font-size: 16px; }
+.home-entry span { display: block; color: #6b7688; font-size: 13px; margin-top: 4px; }
+@media (max-width: 480px) {
+  header h1 { font-size: 16px; }
+  .q { font-size: 18px; }
+  .grid { grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); }
+}
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-thumb { background: #c9d3e6; border-radius: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+.badge {
+  display: inline-block; background: #eef2fa; color: #24406e; border-radius: 20px;
+  padding: 2px 10px; font-size: 12px; margin-right: 6px;
+}
+.stat-card { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eef2fa; }
+.about p { margin: 8px 0; }
+.about ul { margin: 8px 0 8px 20px; }
+.about li { margin: 4px 0; }
+.home-entry:active, .card button:active { transform: scale(.98); }
+</style>
+</head>
+<body>
+<header>
+  <h1>记忆法训练助手</h1>
+  <p>记数字 · 记单词 · 记古诗词 · 记短文 —— 手机电脑通用 · 离线可用 · 可商用部署</p>
+</header>
+<nav id="nav"></nav>
+<main id="main"></main>
+<script>
+const D = {"digitCodes": {"1": "树", "2": "鸭子", "3": "耳朵", "4": "红旗", "5": "钩子", "6": "勺子", "7": "拐杖", "8": "葫芦", "9": "球拍", "10": "棒球", "11": "筷子", "12": "婴儿", "13": "医生", "14": "钥匙", "15": "鹦鹉", "16": "柳条", "17": "仪器", "18": "泥巴", "19": "药酒", "20": "摩托车", "21": "鳄鱼", "22": "鸳鸯", "23": "和尚", "24": "盒子", "25": "二胡", "26": "河流", "27": "耳机", "28": "恶霸", "29": "鹅脚", "30": "森林", "31": "鲨鱼", "32": "扇儿", "33": "钻石", "34": "绅士", "35": "珊瑚", "36": "山鹿", "37": "山鸡", "38": "沙发", "39": "三角", "40": "司令", "41": "司仪", "42": "柿儿", "43": "石山", "44": "狮子", "45": "师傅", "46": "石榴", "47": "司机", "48": "石板", "49": "石球", "50": "武林高手", "51": "狐狸", "52": "孤儿", "53": "火山", "54": "护士", "55": "木屋", "56": "蜗牛", "57": "武器", "58": "苦瓜", "59": "五角星", "60": "榴莲", "61": "老鹰", "62": "驴儿", "63": "流沙", "64": "牛屎", "65": "老虎", "66": "溜溜球", "67": "油漆", "68": "喇叭", "69": "牛角", "70": "麒麟", "71": "奇异果", "72": "企鹅", "73": "鸡蛋", "74": "骑士", "75": "积木", "76": "犀牛", "77": "机器人", "78": "西瓜", "79": "气球", "80": "巴黎", "81": "蚂蚁", "82": "靶儿", "83": "花生", "84": "巴士", "85": "白兔", "86": "八路军", "87": "白棋", "88": "爸爸", "89": "白酒", "90": "酒瓶", "91": "球衣", "92": "球儿", "93": "救生圈", "94": "教师", "95": "救护车", "96": "酒楼", "97": "酒席", "98": "酒吧", "99": "舅舅", "0": "望远镜"}, "wordBank": {"小学": [["apple", "/ˈæpl/", "n.", "苹果", "编码法：A 的编码就是“苹果”，见字母编码表"], ["banana", "/bəˈnɑːnə/", "n.", "香蕉", "拆分：ba（八）+ na（那）：那八根香蕉"], ["orange", "/ˈɒrɪndʒ/", "n.", "橙子", "谐音：“奥润鸡”，橙子颜色像金黄的鸡冠"], ["pear", "/peə(r)/", "n.", "梨", "谐音：“佩儿”，佩儿爱吃梨"], ["watermelon", "/ˈwɔːtəmelən/", "n.", "西瓜", "拆分：water（水）+ melon（瓜）：水瓜，即西瓜"], ["grape", "/ɡreɪp/", "n.", "葡萄", "谐音：“归普”，葡萄一串一串归在一起"], ["strawberry", "/ˈstrɔːbəri/", "n.", "草莓", "拆分：straw（稻草）+ berry（浆果）：稻草旁的红色小浆果"], ["peach", "/piːtʃ/", "n.", "桃子", "谐音：“皮吃”，桃子要剥皮吃"], ["lemon", "/ˈlemən/", "n.", "柠檬", "谐音：“拎门”，拎着门去摘柠檬"], ["cat", "/kæt/", "n.", "猫", "编码法：C 的编码是“月牙”，谐音“猫”联想月牙下的猫"], ["dog", "/dɒɡ/", "n.", "狗", "拼音法：do（都）+ g，狗都爱跑"], ["pig", "/pɪɡ/", "n.", "猪", "编码法：P 的编码是“皮鞋”，猪蹄像穿皮鞋"], ["duck", "/dʌk/", "n.", "鸭子", "谐音：“大可”，鸭子大可游泳"], ["horse", "/hɔːs/", "n.", "马", "谐音：“号死”，马跑起来号叫"], ["cow", "/kaʊ/", "n.", "奶牛", "谐音：“卡乌”，奶牛卡在田里"], ["sheep", "/ʃiːp/", "n.", "绵羊", "谐音：“洗普”，洗普的绵羊"], ["chicken", "/ˈtʃɪkɪn/", "n.", "鸡", "拆分：chick（小鸡）+ en：小鸡长大就是鸡"], ["rabbit", "/ˈræbɪt/", "n.", "兔子", "拆分：ra（啦）+ bbi（比比）：兔子蹦蹦跳跳比比快"], ["fish", "/fɪʃ/", "n.", "鱼", "编码法：F 的编码是“斧头”，用斧头劈鱼（夸张联想）"], ["bird", "/bɜːd/", "n.", "鸟", "拆分：bi（比）+ rd：比谁飞得快的是鸟"], ["monkey", "/ˈmʌŋki/", "n.", "猴子", "编码法：M 的编码是“汉堡包”，猴子抢汉堡包"], ["elephant", "/ˈelɪfənt/", "n.", "大象", "拆分：e（一）+ le（了）+ phan（房）：一只大象住了房"], ["tiger", "/ˈtaɪɡə(r)/", "n.", "老虎", "编码法：T 的编码是“伞”，老虎撑伞散步"], ["lion", "/ˈlaɪən/", "n.", "狮子", "拆分：li（力）+ on（在上）：力大无穷的狮子在上"], ["bear", "/beə(r)/", "n.", "熊", "拼音法：be（不）+ ar：熊不爱吃"], ["panda", "/ˈpændə/", "n.", "熊猫", "拆分：pan（盘）+ da（大）：大盘一样的熊猫"], ["father", "/ˈfɑːðə(r)/", "n.", "父亲", "拆分：fa（发）+ ther：父亲发家养家"], ["mother", "/ˈmʌðə(r)/", "n.", "母亲", "拆分：mo（摸）+ ther：母亲摸我长大"], ["brother", "/ˈbrʌðə(r)/", "n.", "兄弟", "拆分：b（笔）+ rother：兄弟一起用笔学习"], ["sister", "/ˈsɪstə(r)/", "n.", "姐妹", "拆分：si（四）+ ster：姐妹四人一起"], ["grandma", "/ˈɡrænmɑː/", "n.", "奶奶", "拆分：grand（大）+ ma（妈）：大妈妈，即奶奶"], ["grandpa", "/ˈɡrænpɑː/", "n.", "爷爷", "拆分：grand（大）+ pa（爸）：大爸爸，即爷爷"], ["family", "/ˈfæməli/", "n.", "家庭", "拆分：fa（爸）+ mi（妈）+ ly：爸、妈在一起就是家庭"], ["friend", "/frend/", "n.", "朋友", "拆分：fr（俘虏）+ iend：朋友不俘虏你"], ["boy", "/bɔɪ/", "n.", "男孩", "谐音：“宝伊”，宝贝一样的男孩"], ["girl", "/ɡɜːl/", "n.", "女孩", "拆分：gi（鸡）+ rl：女孩像小鸡一样可爱"], ["man", "/mæn/", "n.", "男人", "编码法：M 的编码是“汉堡包”，男人扛汉堡包"], ["woman", "/ˈwʊmən/", "n.", "女人", "拆分：wo（我）+ man（人）：我人，即女人"], ["school", "/skuːl/", "n.", "学校", "拆分：s（海马）+ chool：海马在海里的学校"], ["teacher", "/ˈtiːtʃə(r)/", "n.", "老师", "拆分：tea（茶）+ cher：老师请喝茶"], ["student", "/ˈstjuːdnt/", "n.", "学生", "拆分：st（石头）+ udent：学生在石头上学习"], ["book", "/bʊk/", "n.", "书", "编码法：B 的编码是“笔”，笔和书是一对"], ["pen", "/pen/", "n.", "钢笔", "编码法：P 的编码是“皮鞋”，用皮鞋当笔（夸张）"], ["pencil", "/ˈpensl/", "n.", "铅笔", "拆分：pen（笔）+ cil：笔的一种，铅笔"], ["ruler", "/ˈruːlə(r)/", "n.", "尺子", "拆分：ru（如）+ ler：如尺子一样直"], ["eraser", "/ɪˈreɪzə(r)/", "n.", "橡皮", "拆分：e（一）+ raser：一擦就掉的是橡皮"], ["desk", "/desk/", "n.", "书桌", "谐音：“得死壳”，书桌得死磕学习"], ["chair", "/tʃeə(r)/", "n.", "椅子", "谐音：“缺儿”，椅子缺了一条腿"], ["classroom", "/ˈklɑːsruːm/", "n.", "教室", "拆分：class（班）+ room（房间）：班级的房间"], ["paper", "/ˈpeɪpə(r)/", "n.", "纸", "拆分：pa（怕）+ per：怕弄脏的是纸"], ["map", "/mæp/", "n.", "地图", "编码法：M 的编码是“汉堡包”，地图上画汉堡包"], ["computer", "/kəmˈpjuːtə(r)/", "n.", "电脑", "拆分：com（电脑）+ puter：组合编码 com 就是电脑"], ["lesson", "/ˈlesn/", "n.", "功课，课", "拆分：le（乐）+ sson：乐在其中的功课"], ["homework", "/ˈhəʊmwɜːk/", "n.", "家庭作业", "拆分：home（家）+ work（工作）：家里的功课"], ["water", "/ˈwɔːtə(r)/", "n.", "水", "拆分：wa（哇）+ ter：哇，水来了"], ["milk", "/mɪlk/", "n.", "牛奶", "拆分：mi（米）+ lk：米和牛奶都是白色"], ["bread", "/bred/", "n.", "面包", "谐音：“不热的”，面包不热了再吃"], ["rice", "/raɪs/", "n.", "米饭", "谐音：“来斯”，米饭来了斯文地吃"], ["cake", "/keɪk/", "n.", "蛋糕", "编码法：K 的编码是“机关枪”，用机关枪打蛋糕（夸张）"], ["egg", "/eɡ/", "n.", "鸡蛋", "编码法：E 的编码是“鹅”，鹅下鸡蛋"], ["juice", "/dʒuːs/", "n.", "果汁", "谐音：“珠丝”，果汁像珠丝一样甜"], ["tea", "/tiː/", "n.", "茶", "编码法：T 的编码是“伞”，伞下喝茶"], ["coffee", "/ˈkɒfi/", "n.", "咖啡", "谐音：“考飞”，考试飞过了喝咖啡庆祝"], ["meat", "/miːt/", "n.", "肉", "谐音：“密特”，肉很密特别香"], ["sugar", "/ˈʃʊɡə(r)/", "n.", "糖", "谐音：“舒葛”，糖吃着舒服"], ["salt", "/sɔːlt/", "n.", "盐", "谐音：“索特”，盐索要特别的味道"], ["run", "/rʌn/", "v.", "跑", "编码法：R 的编码是“小草”，在草地上跑"], ["walk", "/wɔːk/", "v.", "走", "拆分：wa（哇）+ lk：哇，走着去"], ["jump", "/dʒʌmp/", "v.", "跳", "谐音：“加木”，跳上加木桩"], ["swim", "/swɪm/", "v.", "游泳", "拆分：s（海马）+ wim：海马在游泳"], ["fly", "/flaɪ/", "v.", "飞", "编码法：F 的编码是“斧头”，斧头飞过来（夸张）"], ["read", "/riːd/", "v.", "读", "编码法：R 的编码是“小草”，在小草旁读书"], ["write", "/raɪt/", "v.", "写", "谐音：“瑞特”，瑞特在写字"], ["speak", "/spiːk/", "v.", "说", "拆分：s（海马）+ peak（峰）：海马在峰顶说话"], ["listen", "/ˈlɪsn/", "v.", "听", "拆分：li（离）+ sten：离近了听"], ["sing", "/sɪŋ/", "v.", "唱", "编码法：S 的编码是“海马”，海马唱歌"], ["dance", "/dɑːns/", "v.", "跳舞", "谐音：“当斯”，当斯跳舞"], ["play", "/pleɪ/", "v.", "玩", "编码法：P 的编码是“皮鞋”，穿着皮鞋玩"], ["eat", "/iːt/", "v.", "吃", "编码法：E 的编码是“鹅”，吃鹅（夸张）"], ["drink", "/drɪŋk/", "v.", "喝", "拆分：dr（大人）+ ink（墨水）：大人喝墨水（夸张）"], ["sleep", "/sliːp/", "v.", "睡觉", "拆分：s（海马）+ leep：海马在睡觉"], ["help", "/help/", "v.", "帮助", "谐音：“汉普”，汉普来帮助"], ["open", "/ˈəʊpən/", "v.", "打开", "拆分：o（甜甜圈）+ pen（笔）：甜甜圈打开拿出笔"], ["close", "/kləʊz/", "v.", "关闭", "拆分：cl（齿轮）+ ose：齿轮转动关闭"], ["buy", "/baɪ/", "v.", "买", "谐音：“拜”，买东西要拜一拜"], ["day", "/deɪ/", "n.", "天，日子", "编码法：D 的编码是“笛子”，白天吹笛子"], ["night", "/naɪt/", "n.", "夜晚", "拆分：ni（你）+ ght：你夜里睡觉"], ["morning", "/ˈmɔːnɪŋ/", "n.", "早晨", "拆分：morn（蒙）+ ing：早晨蒙蒙亮"], ["evening", "/ˈiːvnɪŋ/", "n.", "晚上", "拆分：e（一）+ ening：晚上一个人"], ["today", "/təˈdeɪ/", "adv.", "今天", "拆分：to（到）+ day（天）：到今天"], ["time", "/taɪm/", "n.", "时间", "谐音：“太木”，时间太木（过得快）"], ["year", "/jɪə(r)/", "n.", "年", "拆分：y（晒衣杆）+ ear（耳朵）：晒衣杆挂耳朵上过一年"], ["week", "/wiːk/", "n.", "周", "拆分：we（我们）+ ek：我们一周一聚"], ["sun", "/sʌn/", "n.", "太阳", "编码法：S 的编码是“海马”，海马在太阳下"], ["moon", "/muːn/", "n.", "月亮", "拆分：mo（摸）+ on：摸一摸月亮"], ["star", "/stɑː(r)/", "n.", "星星", "拆分：st（石头）+ ar：石头上闪星星"], ["sky", "/skaɪ/", "n.", "天空", "谐音：“死盖”，天空像盖子罩住"], ["rain", "/reɪn/", "n./v.", "雨，下雨", "谐音：“瑞恩”，瑞恩遇雨"], ["snow", "/snəʊ/", "n./v.", "雪，下雪", "拆分：s（海马）+ now（现在）：海马现在看雪"], ["wind", "/wɪnd/", "n.", "风", "拆分：win（赢）+ d：风赢了万物"], ["cloud", "/klaʊd/", "n.", "云", "拆分：cl（齿轮）+ oud：齿轮转出云"], ["house", "/haʊs/", "n.", "房子", "拆分：hou（后）+ se：后头是房子"], ["room", "/ruːm/", "n.", "房间", "拆分：r（小草）+ oom：小草旁的房间"], ["door", "/dɔː(r)/", "n.", "门", "编码法：D 的编码是“笛子”，门上挂笛子"], ["window", "/ˈwɪndəʊ/", "n.", "窗户", "拆分：wind（风）+ ow：风从窗户过"], ["table", "/ˈteɪbl/", "n.", "桌子", "拆分：ta（他）+ ble：他摆桌子"], ["bed", "/bed/", "n.", "床", "编码法：B 的编码是“笔”，笔放在床上"], ["park", "/pɑːk/", "n.", "公园", "编码法：P 的编码是“皮鞋”，公园里穿皮鞋散步"], ["zoo", "/zuː/", "n.", "动物园", "谐音：“足”，动物园里脚步足"], ["shop", "/ʃɒp/", "n.", "商店", "谐音：“小铺”，小铺就是商店"], ["city", "/ˈsɪti/", "n.", "城市", "拆分：ci（次）+ ty：城市里来来往往多次"], ["road", "/rəʊd/", "n.", "路", "拆分：ro（肉）+ ad：肉铺在路旁（夸张）"]], "初中": [["hello", "/həˈləʊ/", "int.", "你好", "拆分：he（他）+ llo：他向人说你好"], ["good", "/ɡʊd/", "adj.", "好的", "编码法：G 的编码是“鸽子”，鸽子带来好消息"], ["bad", "/bæd/", "adj.", "坏的", "编码法：B 的编码是“笔”，笔坏了"], ["new", "/njuː/", "adj.", "新的", "编码法：N 的编码是“门”，新门"], ["old", "/əʊld/", "adj.", "老的，旧的", "拆分：o（甜甜圈）+ ld：甜甜圈旧了"], ["happy", "/ˈhæpi/", "adj.", "快乐的", "拆分：ha（哈）+ ppy：哈哈快乐"], ["sad", "/sæd/", "adj.", "难过的", "编码法：S 的编码是“海马”，海马难过了"], ["beautiful", "/ˈbjuːtɪfl/", "adj.", "美丽的", "拆分：beaut（美）+ iful：美丽的样子"], ["nice", "/naɪs/", "adj.", "好的，友好的", "谐音：“耐斯”，耐斯（好）的人"], ["big", "/bɪɡ/", "adj.", "大的", "编码法：B 的编码是“笔”，大笔"], ["small", "/smɔːl/", "adj.", "小的", "拆分：s（海马）+ mall：海马小"], ["tall", "/tɔːl/", "adj.", "高的", "编码法：T 的编码是“伞”，伞很高"], ["short", "/ʃɔːt/", "adj.", "短的，矮的", "拆分：sh（上海）+ ort：上海的楼很高，这个短"], ["long", "/lɒŋ/", "adj.", "长的", "编码法：L 的编码是“靴子”，靴子长"], ["fat", "/fæt/", "adj.", "胖的", "编码法：F 的编码是“斧头”，斧头重胖"], ["thin", "/θɪn/", "adj.", "瘦的", "谐音：“西恩”，西恩很瘦"], ["young", "/jʌŋ/", "adj.", "年轻的", "拆分：you（你）+ ng：你正年轻"], ["red", "/red/", "adj./n.", "红色的", "编码法：R 的编码是“小草”，小草变红"], ["blue", "/bluː/", "adj./n.", "蓝色的", "拆分：b（笔）+ lue：笔是蓝色的"], ["yellow", "/ˈjeləʊ/", "adj./n.", "黄色的", "拆分：ye（也）+ llow：也黄"], ["green", "/ɡriːn/", "adj./n.", "绿色的", "拆分：gr（工人）+ een：工人穿绿衣"], ["black", "/blæk/", "adj./n.", "黑色的", "拆分：bl（玻璃）+ ack：玻璃黑了"], ["white", "/waɪt/", "adj./n.", "白色的", "拆分：wh（舞会）+ ite：舞会上白衣"], ["pink", "/pɪŋk/", "adj./n.", "粉色的", "编码法：P 的编码是“皮鞋”，粉色皮鞋"], ["brown", "/braʊn/", "adj./n.", "棕色的", "拆分：br（病人）+ own：病人穿棕衣"], ["purple", "/ˈpɜːpl/", "adj./n.", "紫色的", "拆分：p（皮鞋）+ urple：紫色皮鞋"], ["one", "/wʌn/", "num.", "一", "谐音：“万”，一是万的开始"], ["two", "/tuː/", "num.", "二", "谐音：“兔”，两只兔"], ["three", "/θriː/", "num.", "三", "谐音：“司瑞”，三个司瑞"], ["four", "/fɔː(r)/", "num.", "四", "谐音：“福”，四福"], ["five", "/faɪv/", "num.", "五", "谐音：“飞”，五架飞机"], ["six", "/sɪks/", "num.", "六", "谐音：“死克”，六死克"], ["seven", "/ˈsevn/", "num.", "七", "拆分：sev（七）+ en：七的后缀"], ["eight", "/eɪt/", "num.", "八", "谐音：“艾特”，八人艾特"], ["nine", "/naɪn/", "num.", "九", "谐音：“耐”，九个耐"], ["ten", "/ten/", "num.", "十", "编码法：T 的编码是“伞”，十把伞"], ["first", "/fɜːst/", "num.", "第一", "拆分：f（斧头）+ irst：斧头排第一"], ["second", "/ˈsekənd/", "num.", "第二", "拆分：se（蛇）+ cond：蛇排第二"], ["third", "/θɜːd/", "num.", "第三", "拆分：th（图画）+ ird：图画排第三"], ["eleven", "/ɪˈlevn/", "num.", "十一", "拆分：e（一）+ lev（十一）+ en：十一"], ["twelve", "/twelv/", "num.", "十二", "拆分：t（伞）+ welv：十二把伞"], ["twenty", "/ˈtwenti/", "num.", "二十", "拆分：t（伞）+ wen（万）+ ty：二十把伞"], ["hundred", "/ˈhʌndrəd/", "num.", "百", "拆分：hun（魂）+ dred：百个魂（夸张）"], ["thousand", "/ˈθaʊznd/", "num.", "千", "拆分：th（图画）+ ousand：千张图画"], ["color", "/ˈkʌlə(r)/", "n.", "颜色", "拆分：col（可乐）+ or：可乐的颜色"], ["animal", "/ˈænɪml/", "n.", "动物", "拆分：a（苹果）+ nim（你）+ al：苹果你动物（夸张）"], ["people", "/ˈpiːpl/", "n.", "人们", "拆分：pe（皮）+ ple：皮（人）们"], ["world", "/wɜːld/", "n.", "世界", "拆分：wo（我）+ rld：我走世界"], ["country", "/ˈkʌntri/", "n.", "国家", "拆分：co（可乐）+ untry：可乐运到国家"], ["language", "/ˈlæŋɡwɪdʒ/", "n.", "语言", "拆分：lan（蓝）+ guage：蓝色的语言"], ["question", "/ˈkwestʃən/", "n.", "问题", "拆分：ques（快死）+ tion：问题快死（解决了）"], ["answer", "/ˈɑːnsə(r)/", "n./v.", "回答", "拆分：an（一）+ swer：一个回答"], ["word", "/wɜːd/", "n.", "单词，话语", "拆分：wo（我）+ rd：我的话"], ["sentence", "/ˈsentəns/", "n.", "句子", "拆分：sen（森）+ tence：森林里的句子"], ["text", "/tekst/", "n.", "文本，课文", "拆分：te（特）+ xt：特别的文字"], ["grammar", "/ˈɡræmə(r)/", "n.", "语法", "拆分：gr（工人）+ am（是）+ mar：工人是语法（夸张）"], ["letter", "/ˈletə(r)/", "n.", "信，字母", "拆分：le（乐）+ tter：乐意写信"], ["number", "/ˈnʌmbə(r)/", "n.", "数字", "拆分：nu（奴）+ mber：数字奴隶（夸张）"], ["subject", "/ˈsʌbdʒɪkt/", "n.", "科目", "拆分：sub（在下面）+ ject：科目在下面学"], ["science", "/ˈsaɪəns/", "n.", "科学", "拆分：sci（赛）+ ence：赛科学"], ["history", "/ˈhɪstri/", "n.", "历史", "拆分：hi（嗨）+ story（故事）：嗨，历史是故事"], ["math", "/mæθ/", "n.", "数学", "谐音：“骂死”，数学难被骂死（夸张）"], ["music", "/ˈmjuːzɪk/", "n.", "音乐", "拆分：mu（木）+ sic：木鱼敲音乐"], ["art", "/ɑːt/", "n.", "美术", "编码法：A 的编码是“苹果”，苹果画成艺术"], ["PE", "/piː iː/", "n.", "体育", "拆分：P（皮鞋）+ E（鹅）：皮鞋追鹅（体育）"], ["food", "/fuːd/", "n.", "食物", "谐音：“福的”，食物是福的"], ["fruit", "/fruːt/", "n.", "水果", "拆分：fr（俘虏）+ uit：俘虏要水果"], ["vegetable", "/ˈvedʒtəbl/", "n.", "蔬菜", "拆分：veg（维）+ etable：维生的是蔬菜"], ["breakfast", "/ˈbrekfəst/", "n.", "早餐", "拆分：break（打破）+ fast（禁食）：打破禁食就是早餐"], ["lunch", "/lʌntʃ/", "n.", "午餐", "谐音：“伦吃”，午餐伦吃"], ["dinner", "/ˈdɪnə(r)/", "n.", "晚餐", "拆分：din（丁）+ ner：晚餐一丁点"], ["hungry", "/ˈhʌŋɡri/", "adj.", "饥饿的", "拆分：hun（魂）+ gry：魂都饿没了"], ["full", "/fʊl/", "adj.", "饱的", "编码法：F 的编码是“斧头”，吃饱了才有劲抡斧头"], ["happy", "/ˈhæpi/", "adj.", "快乐的", "见小学词，重复练习巩固"], ["angry", "/ˈæŋɡri/", "adj.", "生气的", "拆分：an（一）+ gry：一生气就饿（谐音）"], ["tired", "/taɪəd/", "adj.", "累的", "拆分：tir（踢）+ ed：踢完就累"], ["healthy", "/ˈhelθi/", "adj.", "健康的", "拆分：health（健康）+ y：健康的样子"], ["sick", "/sɪk/", "adj.", "生病的", "谐音：“塞”，塞住了生病"], ["strong", "/strɒŋ/", "adj.", "强壮的", "拆分：st（石头）+ rong：石头一样强壮"], ["weak", "/wiːk/", "adj.", "弱的", "拆分：we（我们）+ ak：我们弱"], ["fast", "/fɑːst/", "adj./adv.", "快的", "编码法：F 的编码是“斧头”，斧头快"], ["slow", "/sləʊ/", "adj.", "慢的", "拆分：s（海马）+ low（低）：海马慢"], ["early", "/ˈɜːli/", "adj.", "早的", "拆分：ear（耳朵）+ ly：耳朵早起"], ["late", "/leɪt/", "adj.", "晚的", "编码法：L 的编码是“靴子”，靴子穿晚了"], ["hot", "/hɒt/", "adj.", "热的", "编码法：H 的编码是“椅子”，椅子被太阳晒热"], ["cold", "/kəʊld/", "adj.", "冷的", "拆分：co（可乐）+ ld：冷的可乐"], ["warm", "/wɔːm/", "adj.", "温暖的", "拆分：war（战）+ m：战后温暖"], ["cool", "/kuːl/", "adj.", "凉的，酷的", "拆分：c（月牙）+ ool：月牙下乘凉"], ["rainy", "/ˈreɪni/", "adj.", "多雨的", "拆分：rain（雨）+ y：多雨的"], ["windy", "/ˈwɪndi/", "adj.", "多风的", "拆分：wind（风）+ y：多风的"], ["sunny", "/ˈsʌni/", "adj.", "晴朗的", "拆分：sun（太阳）+ ny：晴朗的"], ["cloudy", "/ˈklaʊdi/", "adj.", "多云的", "拆分：cloud（云）+ y：多云的"], ["snowy", "/ˈsnəʊi/", "adj.", "下雪的", "拆分：snow（雪）+ y：下雪的"], ["clean", "/kliːn/", "adj.", "干净的", "拆分：cl（齿轮）+ ean：齿轮转得干净"], ["dirty", "/ˈdɜːti/", "adj.", "脏的", "课件例词：di（敌）+ r（人）+ ty（汤圆）：敌人的汤圆是脏的"], ["quiet", "/ˈkwaɪət/", "adj.", "安静的", "拆分：qu（气球）+ iet：气球安静飘"], ["noisy", "/ˈnɔɪzi/", "adj.", "吵闹的", "拆分：no（不）+ isy：不安静就是吵闹"], ["smart", "/smɑːt/", "adj.", "聪明的", "拆分：s（海马）+ mart（市场）：海马市场很聪明"], ["clever", "/ˈklevə(r)/", "adj.", "聪明的", "拆分：cl（齿轮）+ ever：齿轮永远聪明"], ["brave", "/breɪv/", "adj.", "勇敢的", "拆分：br（病人）+ ave：病人勇敢"], ["kind", "/kaɪnd/", "adj.", "善良的", "编码法：K 的编码是“机关枪”，机关枪下显善良（反差）"], ["friendly", "/ˈfrendli/", "adj.", "友好的", "拆分：friend（朋友）+ ly：朋友一样友好"], ["helpful", "/ˈhelpfl/", "adj.", "有帮助的", "拆分：help（帮助）+ ful：有帮助的"], ["polite", "/pəˈlaɪt/", "adj.", "礼貌的", "拆分：po（婆）+ lite：婆婆有礼貌"], ["rude", "/ruːd/", "adj.", "粗鲁的", "谐音：“入的”，粗鲁入的"], ["careful", "/ˈkeəfl/", "adj.", "小心的", "拆分：care（关心）+ ful：关心就是小心"], ["careless", "/ˈkeələs/", "adj.", "粗心的", "拆分：care（关心）+ less（少）：关心少就粗心"], ["busy", "/ˈbɪzi/", "adj.", "忙的", "拆分：bus（巴士）+ y：巴士很忙"], ["free", "/friː/", "adj.", "空闲的", "拆分：fr（俘虏）+ ee：俘虏空闲（反差）"], ["important", "/ɪmˈpɔːtnt/", "adj.", "重要的", "拆分：im（姨妈）+ port（港口）+ ant：姨妈在港口很重要"], ["beautiful", "/ˈbjuːtɪfl/", "adj.", "美丽的", "见小学词，重复巩固"], ["wonderful", "/ˈwʌndəfl/", "adj.", "极好的", "拆分：won（赢）+ der（的）+ ful：赢了极好"], ["great", "/ɡreɪt/", "adj.", "伟大的，好极的", "拆分：gr（工人）+ eat（吃）：工人吃得很好"], ["nice", "/naɪs/", "adj.", "好的", "见小学词，重复巩固"], ["afraid", "/əˈfreɪd/", "adj.", "害怕的", "拆分：a（苹果）+ fraid（俘虏）：苹果被俘虏害怕"], ["nervous", "/ˈnɜːvəs/", "adj.", "紧张的", "拆分：ner（捏）+ vous（你）：捏你紧张"], ["excited", "/ɪkˈsaɪtɪd/", "adj.", "兴奋的", "拆分：ex（出去）+ cite（喊）+ d：出去喊很兴奋"], ["bored", "/bɔːd/", "adj.", "无聊的", "编码法：B 的编码是“笔”，天天写字无聊"], ["proud", "/praʊd/", "adj.", "自豪的", "拆分：pr（仆人）+ ound：仆人自豪（反差）"], ["lucky", "/ˈlʌki/", "adj.", "幸运的", "拆分：luck（运气）+ y：幸运的"], ["safe", "/seɪf/", "adj.", "安全的", "拆分：s（海马）+ afe：海马安全"], ["danger", "/ˈdeɪndʒə(r)/", "n.", "危险", "课件例词：dang（挡）+ er：挡在儿子前面的是危险"], ["safety", "/ˈseɪfti/", "n.", "安全", "拆分：safe（安全）+ ty：安全"], ["peace", "/piːs/", "n.", "和平", "谐音：“皮斯”，和平皮斯"], ["war", "/wɔː(r)/", "n.", "战争", "拆分：w（王冠）+ ar：王冠下的战争"], ["peaceful", "/ˈpiːsfl/", "adj.", "和平的", "拆分：peace（和平）+ ful：和平的"], ["love", "/lʌv/", "n./v.", "爱", "拆分：l（靴子）+ ove：靴子里有爱"], ["lovely", "/ˈlʌvli/", "adj.", "可爱的", "拆分：love（爱）+ ly：可爱的"], ["like", "/laɪk/", "v.", "喜欢", "拆分：l（靴子）+ ike：喜欢靴子"], ["hate", "/heɪt/", "v.", "讨厌", "拆分：h（椅子）+ ate：讨厌椅子吃饭"], ["want", "/wɒnt/", "v.", "想要", "拆分：w（王冠）+ ant：想要王冠"], ["need", "/niːd/", "v.", "需要", "拆分：n（门）+ eed：需要门"], ["give", "/ɡɪv/", "v.", "给", "拆分：g（鸽子）+ ive：鸽子给东西"], ["take", "/teɪk/", "v.", "拿", "编码法：T 的编码是“伞”，拿伞"], ["bring", "/brɪŋ/", "v.", "带来", "拆分：br（病人）+ ing：病人带来东西"], ["carry", "/ˈkæri/", "v.", "搬运", "拆分：ca（卡）+ rry：卡着搬运"], ["send", "/send/", "v.", "发送", "拆分：s（海马）+ end：海马发送"], ["receive", "/rɪˈsiːv/", "v.", "收到", "拆分：re（热）+ ceive（收）：收到热的东西"], ["make", "/meɪk/", "v.", "制作", "拆分：m（汉堡包）+ ake：制作汉堡包"], ["build", "/bɪld/", "v.", "建造", "拆分：b（笔）+ uild：用笔建造"], ["create", "/kriˈeɪt/", "v.", "创造", "拆分：cr（超人）+ eat（吃）：超人创造吃的"], ["learn", "/lɜːn/", "v.", "学习", "拆分：l（靴子）+ earn：穿着靴子学习"], ["study", "/ˈstʌdi/", "v./n.", "学习", "拆分：st（石头）+ udy：在石头上学习"], ["teach", "/tiːtʃ/", "v.", "教", "拆分：tea（茶）+ ch：教人喝茶"], ["practice", "/ˈpræktɪs/", "n./v.", "练习", "拆分：pr（仆人）+ act（做）+ ice：仆人做练习"], ["remember", "/rɪˈmembə(r)/", "v.", "记得", "拆分：re（热）+ mem（我）+ ber：热得我记得"], ["forget", "/fəˈɡet/", "v.", "忘记", "拆分：for（为了）+ get（得到）：为了得到而忘记"], ["think", "/θɪŋk/", "v.", "想", "拆分：th（图画）+ ink：图画里想"], ["know", "/nəʊ/", "v.", "知道", "拆分：k（机关枪）+ now：机关枪现在知道"], ["guess", "/ɡes/", "v.", "猜", "拆分：g（鸽子）+ ess：鸽子猜"], ["find", "/faɪnd/", "v.", "找到", "拆分：f（斧头）+ ind：斧头找到"], ["look", "/lʊk/", "v.", "看", "拆分：l（靴子）+ ook：靴子看"], ["see", "/siː/", "v.", "看见", "编码法：S 的编码是“海马”，看见海马"], ["watch", "/wɒtʃ/", "v./n.", "观看，手表", "拆分：wa（哇）+ tch：哇，看手表"], ["hear", "/hɪə(r)/", "v.", "听见", "拆分：h（椅子）+ ear（耳朵）：椅子上用耳朵听"], ["smell", "/smel/", "v.", "闻", "拆分：s（海马）+ mell：海马闻"], ["taste", "/teɪst/", "v.", "尝", "拆分：ta（他）+ ste：他尝"], ["feel", "/fiːl/", "v.", "感觉", "拆分：f（斧头）+ eel：斧头感觉"], ["touch", "/tʌtʃ/", "v.", "触摸", "拆分：t（伞）+ ouch：伞一摸"], ["start", "/stɑːt/", "v.", "开始", "拆分：st（石头）+ art：石头开始（艺术）"], ["stop", "/stɒp/", "v.", "停止", "拆分：st（石头）+ op：石头停下"], ["finish", "/ˈfɪnɪʃ/", "v.", "完成", "拆分：fin（鱼）+ ish：鱼完成"], ["begin", "/bɪˈɡɪn/", "v.", "开始", "拆分：be（是）+ gin：开始是gin"], ["continue", "/kənˈtɪnjuː/", "v.", "继续", "拆分：con（可乐）+ tin（罐）+ ue：可乐罐继续"], ["change", "/tʃeɪndʒ/", "v./n.", "改变", "课件例词：chang（嫦）+ e：嫦娥改变了看法"], ["turn", "/tɜːn/", "v.", "转动", "拆分：t（伞）+ urn：伞转动"], ["move", "/muːv/", "v.", "移动", "拆分：m（汉堡包）+ ove：汉堡包移动"], ["go", "/ɡəʊ/", "v.", "去", "编码法：G 的编码是“鸽子”，鸽子去了"], ["come", "/kʌm/", "v.", "来", "拆分：co（可乐）+ me：可乐来我这"], ["arrive", "/əˈraɪv/", "v.", "到达", "拆分：ar（矮人）+ rive（河）：矮人到河边"], ["leave", "/liːv/", "v.", "离开", "拆分：l（靴子）+ eave：靴子离开"], ["return", "/rɪˈtɜːn/", "v.", "返回", "拆分：re（热）+ turn：热了返回"], ["travel", "/ˈtrævl/", "v./n.", "旅行", "拆分：tr（土人）+ avel：土人旅行"], ["visit", "/ˈvɪzɪt/", "v./n.", "参观", "拆分：v（夹子）+ isit：夹子参观"], ["meet", "/miːt/", "v.", "遇见", "拆分：m（汉堡包）+ eet：汉堡包遇见"], ["introduce", "/ˌɪntrəˈdjuːs/", "v.", "介绍", "拆分：in（在里）+ tro（土人）+ duce：土人在里介绍"], ["greet", "/ɡriːt/", "v.", "问候", "拆分：gr（工人）+ eet：工人问候"], ["call", "/kɔːl/", "v./n.", "呼叫", "拆分：ca（卡）+ ll：卡住了呼叫"], ["phone", "/fəʊn/", "n./v.", "电话", "谐音：“佛恩”，电话佛恩"], ["message", "/ˈmesɪdʒ/", "n.", "消息", "拆分：mes（迷）+ sage：迷糊的消息"], ["letter", "/ˈletə(r)/", "n.", "信", "见前词，重复巩固"], ["story", "/ˈstɔːri/", "n.", "故事", "拆分：st（石头）+ ory：石头里的故事"], ["news", "/njuːz/", "n.", "新闻", "拆分：new（新）+ s：新的新闻"], ["idea", "/aɪˈdɪə/", "n.", "主意", "拆分：i（蜡烛）+ dea：蜡烛下想主意"], ["thought", "/θɔːt/", "n.", "想法", "拆分：th（图画）+ ought：图画里的想法"], ["dream", "/driːm/", "n./v.", "梦", "拆分：dr（大人）+ eam：大人做梦"], ["plan", "/plæn/", "n./v.", "计划", "拆分：pl（漂亮）+ an：漂亮的计划"], ["goal", "/ɡəʊl/", "n.", "目标", "拆分：g（鸽子）+ oal：鸽子的目标"], ["hope", "/həʊp/", "n./v.", "希望", "拆分：h（椅子）+ ope：椅子上有希望"], ["wish", "/wɪʃ/", "n./v.", "愿望", "拆分：w（王冠）+ ish：王冠下的愿望"], ["dream", "/driːm/", "n./v.", "梦想", "见前词，重复巩固"], ["success", "/səkˈses/", "n.", "成功", "拆分：suc（速）+ cess（去）：速去成功"], ["fail", "/feɪl/", "v.", "失败", "编码法：F 的编码是“斧头”，斧头断了失败"], ["win", "/wɪn/", "v.", "赢", "拆分：w（王冠）+ in：王冠里赢"], ["lose", "/luːz/", "v.", "失去", "拆分：l（靴子）+ ose：靴子失去"], ["challenge", "/ˈtʃælɪndʒ/", "n./v.", "挑战", "拆分：ch（菜花）+ allenge：菜花挑战"], ["dream", "/driːm/", "n./v.", "梦想", "见前词，重复巩固"], ["future", "/ˈfjuːtʃə(r)/", "n.", "未来", "拆分：fu（福）+ ture：福在未来"], ["past", "/pɑːst/", "n.", "过去", "拆分：pa（怕）+ st：怕过去"], ["present", "/ˈpreznt/", "n./adj.", "现在，礼物", "拆分：pre（热）+ sent（送）：热天送礼物"], ["tomorrow", "/təˈmɒrəʊ/", "n.", "明天", "拆分：to（到）+ morrow：到明天"], ["yesterday", "/ˈjestədeɪ/", "n.", "昨天", "拆分：yes（是）+ terday：昨天是"], ["weekend", "/ˈwiːkend/", "n.", "周末", "拆分：week（周）+ end（结束）：周末结束"], ["holiday", "/ˈhɒlədeɪ/", "n.", "假日", "拆分：hol（洞）+ iday：洞里放假（夸张）"], ["festival", "/ˈfestɪvl/", "n.", "节日", "拆分：fe（飞）+ stival：飞过节日"], ["birthday", "/ˈbɜːθdeɪ/", "n.", "生日", "拆分：birth（出生）+ day（天）：出生的天"], ["weather", "/ˈweðə(r)/", "n.", "天气", "拆分：we（我们）+ ather：我们看天气"], ["season", "/ˈsiːzn/", "n.", "季节", "拆分：sea（海）+ son：海的儿子是季节"], ["spring", "/sprɪŋ/", "n.", "春天", "拆分：sp（上海）+ ring：上海的春天"], ["summer", "/ˈsʌmə(r)/", "n.", "夏天", "拆分：sum（总）+ mer：夏天总热"], ["autumn", "/ˈɔːtəm/", "n.", "秋天", "拆分：au（遨游）+ tumn：遨游在秋天"], ["winter", "/ˈwɪntə(r)/", "n.", "冬天", "拆分：win（赢）+ ter：冬天赢了寒冷"], ["plant", "/plɑːnt/", "v./n.", "种植，植物", "拆分：pl（漂亮）+ ant：漂亮的植物"], ["tree", "/triː/", "n.", "树", "拆分：tr（土人）+ ee：土人靠着树"], ["flower", "/ˈflaʊə(r)/", "n.", "花", "拆分：fl（俘虏）+ lower：俘虏送花"], ["grass", "/ɡrɑːs/", "n.", "草", "拆分：gr（工人）+ ass：工人躺在草上"], ["leaf", "/liːf/", "n.", "叶子", "拆分：l（靴子）+ eaf：靴子上沾叶子"], ["forest", "/ˈfɒrɪst/", "n.", "森林", "拆分：for（为了）+ est：为了森林"], ["mountain", "/ˈmaʊntən/", "n.", "山", "拆分：mo（摸）+ untain：摸山"], ["river", "/ˈrɪvə(r)/", "n.", "河", "拆分：r（小草）+ iver：小草在河边"], ["lake", "/leɪk/", "n.", "湖", "编码法：L 的编码是“靴子”，靴子在湖里"], ["sea", "/siː/", "n.", "海", "编码法：S 的编码是“海马”，海马在海里"], ["beach", "/biːtʃ/", "n.", "海滩", "拆分：b（笔）+ each：笔在海滩"], ["island", "/ˈaɪlənd/", "n.", "岛", "拆分：i（蜡烛）+ sland：蜡烛点亮岛"], ["field", "/fiːld/", "n.", "田野", "拆分：f（斧头）+ ield：斧头在田野"], ["garden", "/ˈɡɑːdn/", "n.", "花园", "拆分：g（鸽子）+ arden：鸽子在花园"], ["forest", "/ˈfɒrɪst/", "n.", "森林", "见前词，重复巩固"], ["world", "/wɜːld/", "n.", "世界", "见前词，重复巩固"]], "高中": [["achieve", "/əˈtʃiːv/", "v.", "实现", "拆分：a（苹果）+ ch（菜花）+ ieve：苹果菜花实现（夸张）"], ["achievement", "/əˈtʃiːvmənt/", "n.", "成就", "拆分：achieve（实现）+ ment（名词后缀）"], ["adapt", "/əˈdæpt/", "v.", "适应", "拆分：ad（阿弟）+ apt（合适）：阿弟合适就适应"], ["admire", "/ədˈmaɪə(r)/", "v.", "钦佩", "拆分：ad（阿弟）+ mire（泥）：阿弟在泥里仍被钦佩（夸张）"], ["advantage", "/ədˈvɑːntɪdʒ/", "n.", "优点", "课件例词：ad van tage：阿弟玩他哥，他哥不生气是优点"], ["adventure", "/ədˈventʃə(r)/", "n.", "冒险", "拆分：ad（阿弟）+ venture（冒险）：阿弟冒险"], ["advice", "/ədˈvaɪs/", "n.", "建议", "拆分：ad（阿弟）+ vice（恶）：阿弟建议弃恶"], ["analyze", "/ˈænəlaɪz/", "v.", "分析", "拆分：an（一）+ aly（阿力）+ ze：阿力分析一下"], ["argument", "/ˈɑːɡjumənt/", "n.", "争论", "拆分：argu（阿哥）+ ment：阿哥争论"], ["arrange", "/əˈreɪndʒ/", "v.", "安排", "拆分：ar（矮人）+ range（范围）：矮人安排范围"], ["assess", "/əˈses/", "v.", "评估", "拆分：as（阿司）+ sess（坐）：阿司坐着评估"], ["assign", "/əˈsaɪn/", "v.", "分配", "拆分：as（阿司）+ sign（符号）：阿司分配符号"], ["assist", "/əˈsɪst/", "v.", "帮助", "拆分：as（阿司）+ sist（姐妹）：阿司帮助姐妹"], ["assume", "/əˈsjuːm/", "v.", "假定", "拆分：as（阿司）+ sume（总）：阿司假定总数"], ["attitude", "/ˈætɪtjuːd/", "n.", "态度", "拆分：at（在）+ titude（态度）：在态度里"], ["attract", "/əˈtrækt/", "v.", "吸引", "拆分：at（在）+ tract（拉）：拉过来就是吸引"], ["available", "/əˈveɪləbl/", "adj.", "可获得的", "拆分：a（苹果）+ vail（值）+ able：苹果有价值可获得"], ["behavior", "/bɪˈheɪvjə(r)/", "n.", "行为", "拆分：be（是）+ havio（行为）+ r：是行为"], ["belief", "/bɪˈliːf/", "n.", "信念", "拆分：be（是）+ lief（愿意）：愿意就是信念"], ["benefit", "/ˈbenɪfɪt/", "n./v.", "益处", "拆分：bene（好）+ fit（适合）：适合就是益处"], ["challenge", "/ˈtʃælɪndʒ/", "n./v.", "挑战", "见初中词，重复巩固"], ["character", "/ˈkærəktə(r)/", "n.", "性格，角色", "拆分：cha（茶）+ rac（人）+ ter：茶人性格"], ["circumstance", "/ˈsɜːkəmstəns/", "n.", "情况", "拆分：circ（环）+ um（在）+ stance（站）：环在站着的情况"], ["communicate", "/kəˈmjuːnɪkeɪt/", "v.", "交流", "拆分：com（电脑）+ mun（你）+ icate：电脑与你交流"], ["community", "/kəˈmjuːnəti/", "n.", "社区", "拆分：com（电脑）+ mun（你）+ ity：电脑你的社区"], ["compare", "/kəmˈpeə(r)/", "v.", "比较", "拆分：com（电脑）+ pare（配）：电脑配对比较"], ["compose", "/kəmˈpəʊz/", "v.", "组成，创作", "拆分：com（电脑）+ pose（姿势）：电脑摆姿势创作"], ["concentrate", "/ˈkɒnsntreɪt/", "v.", "集中", "拆分：con（可乐）+ cent（分）+ rate：可乐分着集中"], ["concern", "/kənˈsɜːn/", "v./n.", "关心", "拆分：con（可乐）+ cern（担心）：可乐让人担心"], ["conclude", "/kənˈkluːd/", "v.", "得出结论", "拆分：con（可乐）+ clude（关闭）：可乐关闭得出结论"], ["condition", "/kənˈdɪʃn/", "n.", "条件", "拆分：con（可乐）+ dit（条件）+ ion：可乐的条件"], ["confident", "/ˈkɒnfɪdənt/", "adj.", "自信的", "拆分：con（可乐）+ fid（信）+ ent：可乐相信自信"], ["confirm", "/kənˈfɜːm/", "v.", "确认", "拆分：con（可乐）+ firm（坚固）：可乐坚固需确认"], ["consider", "/kənˈsɪdə(r)/", "v.", "考虑", "拆分：con（可乐）+ sider（坐）：可乐坐着考虑"], ["contribute", "/kənˈtrɪbjuːt/", "v.", "贡献", "拆分：con（可乐）+ tri（土人）+ bute：可乐土人贡献"], ["convenient", "/kənˈviːniənt/", "adj.", "方便的", "拆分：con（可乐）+ ven（来）+ ient：可乐来了方便"], ["convince", "/kənˈvɪns/", "v.", "说服", "拆分：con（可乐）+ vince（赢）：可乐赢来说服"], ["create", "/kriˈeɪt/", "v.", "创造", "见初中词，重复巩固"], ["culture", "/ˈkʌltʃə(r)/", "n.", "文化", "拆分：cul（酷）+ ture：酷的文化"], ["decrease", "/dɪˈkriːs/", "v.", "减少", "拆分：de（得）+ crease（折）：得折了就减少"], ["definite", "/ˈdefɪnət/", "adj.", "明确的", "拆分：de（得）+ fin（鱼）+ ite：得鱼明确"], ["determine", "/dɪˈtɜːmɪn/", "v.", "决定", "拆分：de（得）+ term（期）+ ine：得期限决定"], ["develop", "/dɪˈveləp/", "v.", "发展", "拆分：de（得）+ velop（包）：得包发展"], ["devote", "/dɪˈvəʊt/", "v.", "致力于", "拆分：de（得）+ vote（投票）：得投票致力于"], ["dilemma", "/dɪˈlemə/", "n.", "困境", "拆分：di（敌）+ lemma（难题）：敌人的难题是困境"], ["discuss", "/dɪˈskʌs/", "v.", "讨论", "拆分：di（敌）+ scuss（死磕）：敌人死磕讨论"], ["diverse", "/daɪˈvɜːs/", "adj.", "多样的", "拆分：di（敌）+ verse（诗）：敌人读多样的诗"], ["dynamic", "/daɪˈnæmɪk/", "adj.", "动态的", "拆分：dy（呆）+ nam（名）+ ic：呆名动态"], ["economy", "/ɪˈkɒnəmi/", "n.", "经济", "拆分：e（鹅）+ co（可乐）+ nomy：鹅的可乐经济"], ["educate", "/ˈedʒukeɪt/", "v.", "教育", "拆分：e（鹅）+ du（度）+ cate：鹅度教育"], ["efficient", "/ɪˈfɪʃnt/", "adj.", "高效的", "拆分：ef（一夫）+ fici（做）+ ent：一夫做高效"], ["effort", "/ˈefət/", "n.", "努力", "拆分：ef（一夫）+ fort（堡）：一夫努力守堡"], ["emerge", "/ɪˈmɜːdʒ/", "v.", "出现", "拆分：e（鹅）+ merge（合并）：鹅合并出现"], ["emphasis", "/ˈemfəsɪs/", "n.", "强调", "拆分：em（姨妈）+ pha（怕）+ sis：姨妈怕强调"], ["enhance", "/ɪnˈhɑːns/", "v.", "增强", "拆分：en（使）+ hance（寒）：使寒增强"], ["enormous", "/ɪˈnɔːməs/", "adj.", "巨大的", "拆分：e（鹅）+ norm（规范）+ ous：鹅的规范巨大"], ["environment", "/ɪnˈvaɪrənmənt/", "n.", "环境", "拆分：en（使）+ vir（圆）+ ment：使圆的环境"], ["escape", "/ɪˈskeɪp/", "v.", "逃跑", "拆分：e（鹅）+ scape（景）：鹅看景逃跑"], ["establish", "/ɪˈstæblɪʃ/", "v.", "建立", "拆分：e（鹅）+ stab（站）+ lish：鹅站建立"], ["evaluate", "/ɪˈvæljueɪt/", "v.", "评估", "拆分：e（鹅）+ val（值）+ uate：鹅值评估"], ["evidence", "/ˈevɪdəns/", "n.", "证据", "拆分：e（鹅）+ vi（威）+ dence：鹅威证据"], ["evolve", "/ɪˈvɒlv/", "v.", "进化", "拆分：e（鹅）+ vol（转）+ ve：鹅转进化"], ["explore", "/ɪkˈsplɔː(r)/", "v.", "探索", "拆分：ex（出）+ plo（破）+ re：出破探索"], ["express", "/ɪkˈspres/", "v.", "表达", "拆分：ex（出）+ press（压）：出压表达"], ["extent", "/ɪkˈstent/", "n.", "程度", "拆分：ex（出）+ tent（帐篷）：出帐篷的程度"], ["facility", "/fəˈsɪləti/", "n.", "设施", "拆分：fa（发）+ ci（刺）+ lity：发刺设施"], ["factor", "/ˈfæktə(r)/", "n.", "因素", "拆分：fa（发）+ ctor（人）：发人因素"], ["familiar", "/fəˈmɪliə(r)/", "adj.", "熟悉的", "拆分：fa（发）+ mil（米）+ iar：发米熟悉"], ["fashion", "/ˈfæʃn/", "n.", "时尚", "拆分：fa（发）+ shi（上海）+ on：发上海时尚"], ["feature", "/ˈfiːtʃə(r)/", "n.", "特征", "拆分：fe（飞）+ ature（年龄）：飞年龄特征"], ["finance", "/ˈfaɪnæns/", "n.", "金融", "拆分：fi（飞）+ nance（南）：飞南金融"], ["flexible", "/ˈfleksəbl/", "adj.", "灵活的", "拆分：fl（俘虏）+ ex（出）+ ible：俘虏出得灵活"], ["forever", "/fərˈevə(r)/", "adv.", "永远", "拆分：for（为了）+ ever（永远）：为了永远"], ["forget", "/fəˈɡet/", "v.", "忘记", "见初中词，重复巩固"], ["fortune", "/ˈfɔːtʃuːn/", "n.", "财富，运气", "拆分：for（为了）+ tune（调）：为了调财富"], ["frequent", "/ˈfriːkwənt/", "adj.", "频繁的", "拆分：fr（俘虏）+ equent：俘虏频繁"], ["fundamental", "/ˌfʌndəˈmentl/", "adj.", "基本的", "拆分：fund（资金）+ ament（一）+ tal：资金是基本的"], ["generate", "/ˈdʒenəreɪt/", "v.", "产生", "拆分：gen（跟）+ erate（一）：跟一产生"], ["genuine", "/ˈdʒenjuɪn/", "adj.", "真正的", "拆分：gen（跟）+ uine（你）：跟你真正的"], ["gradual", "/ˈɡrædʒuəl/", "adj.", "逐渐的", "拆分：grad（级）+ ual：一级一级逐渐"], ["guarantee", "/ˌɡærənˈtiː/", "v./n.", "保证", "拆分：gua（瓜）+ ran（人）+ tee：瓜人保证"], ["hesitate", "/ˈhezɪteɪt/", "v.", "犹豫", "课件例词：he（他）+ sit（坐）+ ate（吃）：他犹豫地坐着吃"], ["identify", "/aɪˈdentɪfaɪ/", "v.", "识别", "拆分：i（蜡烛）+ dent（牙）+ ify：蜡烛照牙识别"], ["impact", "/ˈɪmpækt/", "n./v.", "影响", "拆分：im（姨妈）+ pact（拍）：姨妈拍影响"], ["implement", "/ˈɪmplɪment/", "v.", "实施", "拆分：im（姨妈）+ ple（漂亮）+ ment：姨妈漂亮实施"], ["impress", "/ɪmˈpres/", "v.", "使印象深刻", "拆分：im（姨妈）+ press（压）：姨妈压出印象"], ["improve", "/ɪmˈpruːv/", "v.", "改善", "拆分：im（姨妈）+ prove（证明）：姨妈证明改善"], ["incident", "/ˈɪnsɪdənt/", "n.", "事件", "拆分：in（在里）+ cid（落）+ ent：在里落事件"], ["independent", "/ˌɪndɪˈpendnt/", "adj.", "独立的", "拆分：in（不）+ de（得）+ pen（盆）+ dent：不得盆独立"], ["indicate", "/ˈɪndɪkeɪt/", "v.", "表明", "拆分：in（在里）+ dic（字典）+ ate：在里字典表明"], ["individual", "/ˌɪndɪˈvɪdʒuəl/", "adj./n.", "个人的", "拆分：in（不）+ di（敌）+ vid（分）+ ual：不分敌个人"], ["influence", "/ˈɪnfluəns/", "n./v.", "影响", "拆分：in（在里）+ flu（流）+ ence：在里流动影响"], ["inform", "/ɪnˈfɔːm/", "v.", "通知", "拆分：in（在里）+ form（表格）：在里表格通知"], ["injure", "/ˈɪndʒə(r)/", "v.", "伤害", "拆分：in（在里）+ ju（珠）+ re：在里珠受伤"], ["innocent", "/ˈɪnəsnt/", "adj.", "无辜的", "拆分：in（不）+ no（没有）+ cent（分）：没有分是无辜的"], ["inspire", "/ɪnˈspaɪə(r)/", "v.", "激励", "拆分：in（在里）+ spi（思）+ re：在里思激励"], ["install", "/ɪnˈstɔːl/", "v.", "安装", "拆分：in（在里）+ stall（摊）：在里摊安装"], ["intelligence", "/ɪnˈtelɪdʒəns/", "n.", "智力", "拆分：in（在里）+ tel（电话）+ ligen（来）+ ce：在里电话来智力"], ["intense", "/ɪnˈtens/", "adj.", "强烈的", "拆分：in（在里）+ tense（紧张）：在里紧张强烈"], ["intention", "/ɪnˈtenʃn/", "n.", "意图", "拆分：in（在里）+ tent（帐篷）+ ion：在里帐篷意图"], ["interpret", "/ɪnˈtɜːprɪt/", "v.", "解释", "拆分：in（在里）+ ter（土人）+ pre（热）：在里土人热解释"], ["introduce", "/ˌɪntrəˈdjuːs/", "v.", "介绍", "见初中词，重复巩固"], ["invent", "/ɪnˈvent/", "v.", "发明", "拆分：in（在里）+ vent（来）：在里来发明"], ["invest", "/ɪnˈvest/", "v.", "投资", "拆分：in（在里）+ vest（背心）：在里背心投资"], ["involve", "/ɪnˈvɒlv/", "v.", "涉及", "拆分：in（在里）+ vol（转）+ ve：在里转涉及"], ["journal", "/ˈdʒɜːnl/", "n.", "日记，期刊", "拆分：j（钩子）+ our（我们的）+ nal：钩子挂我们的日记"], ["judge", "/dʒʌdʒ/", "v./n.", "判断，法官", "拆分：j（钩子）+ udge：钩子判断"], ["justice", "/ˈdʒʌstɪs/", "n.", "正义", "拆分：just（刚好）+ ice（冰）：刚好冰是正义"], ["knowledge", "/ˈnɒlɪdʒ/", "n.", "知识", "拆分：know（知道）+ ledge（边）：知道边就是知识"], ["landscape", "/ˈlændskeɪp/", "n.", "风景", "拆分：land（土地）+ scape（景）：土地的景"], ["launch", "/lɔːntʃ/", "v./n.", "发射，发起", "拆分：lau（捞）+ nch：捞起发射"], ["leisure", "/ˈleʒə(r)/", "n.", "休闲", "拆分：le（乐）+ isure：乐在休闲"], ["literature", "/ˈlɪtrətʃə(r)/", "n.", "文学", "拆分：li（力）+ ter（土人）+ ature：力给土人文学"], ["maintain", "/meɪnˈteɪn/", "v.", "保持", "拆分：main（主要）+ tain（拿）：主要拿保持"], ["major", "/ˈmeɪdʒə(r)/", "adj./n.", "主要的", "拆分：ma（妈）+ jor（架）：妈架主要的"], ["manage", "/ˈmænɪdʒ/", "v.", "管理", "拆分：ma（妈）+ nage：妈管理"], ["manner", "/ˈmænə(r)/", "n.", "方式，礼貌", "拆分：ma（妈）+ nner：妈的方式"], ["measure", "/ˈmeʒə(r)/", "v./n.", "测量", "拆分：me（我）+ asure：我测量"], ["memory", "/ˈmeməri/", "n.", "记忆", "拆分：me（我）+ mory：我的记忆"], ["mention", "/ˈmenʃn/", "v.", "提到", "拆分：men（人）+ tion（神）：人提到神"], ["method", "/ˈmeθəd/", "n.", "方法", "拆分：me（我）+ thod：我的方法"], ["motivate", "/ˈməʊtɪveɪt/", "v.", "激励", "拆分：mo（摸）+ ti（提）+ vate：摸提激励"], ["natural", "/ˈnætʃrəl/", "adj.", "自然的", "拆分：na（那）+ tur（土人）+ al：那土人自然"], ["nature", "/ˈneɪtʃə(r)/", "n.", "自然", "拆分：na（那）+ ture：那自然"], ["normal", "/ˈnɔːml/", "adj.", "正常的", "拆分：nor（不）+ mal（马）：不马正常（谐音）"], ["notice", "/ˈnəʊtɪs/", "v./n.", "注意，通知", "拆分：no（不）+ tice（踢）：不踢要注意"], ["observe", "/əbˈzɜːv/", "v.", "观察", "拆分：ob（哦不）+ serve（服务）：哦不服务要观察"], ["obtain", "/əbˈteɪn/", "v.", "获得", "拆分：ob（哦不）+ tain（拿）：哦不拿获得"], ["occur", "/əˈkɜː(r)/", "v.", "发生", "拆分：oc（哦可）+ cur（跑）：哦可跑发生了"], ["opportunity", "/ˌɒpəˈtjuːnəti/", "n.", "机会", "拆分：op（破）+ port（港口）+ unity：破港口有机会"], ["oppose", "/əˈpəʊz/", "v.", "反对", "拆分：op（破）+ pose（姿势）：破姿势反对"], ["optimistic", "/ˌɒptɪˈmɪstɪk/", "adj.", "乐观的", "拆分：opt（选择）+ im（我）+ istic：选择我乐观"], ["organize", "/ˈɔːɡənaɪz/", "v.", "组织", "拆分：or（或者）+ gan（跟）+ ize：或者跟组织"], ["origin", "/ˈɒrɪdʒɪn/", "n.", "起源", "拆分：or（或者）+ i（蜡烛）+ gin（开始）：或者蜡烛开始起源"], ["overcome", "/ˌəʊvəˈkʌm/", "v.", "克服", "拆分：over（过）+ come（来）：过来克服"], ["particular", "/pəˈtɪkjələ(r)/", "adj.", "特定的", "拆分：part（部分）+ icular：部分特定"], ["participate", "/pɑːˈtɪsɪpeɪt/", "v.", "参与", "拆分：part（部分）+ icip（一起）+ ate：部分一起参与"], ["pattern", "/ˈpætn/", "n.", "模式，图案", "拆分：pa（怕）+ ttern：怕模式"], ["perform", "/pəˈfɔːm/", "v.", "表演，执行", "拆分：per（破）+ form（表格）：破表格执行"], ["permanent", "/ˈpɜːmənənt/", "adj.", "永久的", "拆分：per（破）+ man（人）+ ent：破人永久"], ["persuade", "/pəˈsweɪd/", "v.", "说服", "拆分：per（破）+ sua（算）+ de：破算说服"], ["phenomenon", "/fəˈnɒmɪnən/", "n.", "现象", "拆分：phe（飞）+ nome（名字）+ non：飞名字现象"], ["polymer", "/ˈpɒlɪmə(r)/", "n.", "聚合物", "拆分：poly（多）+ mer（我）：多我聚合物"], ["popular", "/ˈpɒpjələ(r)/", "adj.", "受欢迎的", "拆分：pop（破）+ u（水桶）+ lar：破水桶受欢迎"], ["potential", "/pəˈtenʃl/", "adj./n.", "潜在的", "拆分：pot（锅）+ enti（一）+ al：锅里一潜在"], ["predict", "/prɪˈdɪkt/", "v.", "预测", "拆分：pre（热）+ dict（字典）：热字典预测"], ["prefer", "/prɪˈfɜː(r)/", "v.", "更喜欢", "拆分：pre（热）+ fer（运）：热运更喜欢"], ["prejudice", "/ˈpredʒudɪs/", "n.", "偏见", "拆分：pre（热）+ ju（珠）+ dice（死）：热珠死偏见"], ["preserve", "/prɪˈzɜːv/", "v.", "保护", "拆分：pre（热）+ serve（服务）：热服务保护"], ["prevent", "/prɪˈvent/", "v.", "防止", "拆分：pre（热）+ vent（来）：热来防止"], ["previous", "/ˈpriːviəs/", "adj.", "先前的", "拆分：pre（热）+ vi（威）+ ous：热威先前"], ["principle", "/ˈprɪnsəpl/", "n.", "原则", "拆分：pr（仆人）+ in（在里）+ ciple：仆人在里原则"], ["priority", "/praɪˈɒrəti/", "n.", "优先", "拆分：pri（怕）+ or（或者）+ ity：怕或者优先"], ["process", "/ˈprəʊses/", "n./v.", "过程", "拆分：pro（前）+ cess（去）：前去过程"], ["produce", "/prəˈdjuːs/", "v.", "生产", "拆分：pro（前）+ duce（带）：前带生产"], ["profession", "/prəˈfeʃn/", "n.", "职业", "拆分：pro（前）+ fe（飞）+ ssion：前飞职业"], ["profound", "/prəˈfaʊnd/", "adj.", "深刻的", "拆分：pro（前）+ found（找）：前找深刻"], ["progress", "/ˈprəʊɡres/", "n./v.", "进步", "拆分：pro（前）+ gre（工人）+ ss：前工人进步"], ["prohibit", "/prəˈhɪbɪt/", "v.", "禁止", "拆分：pro（前）+ hi（椅子）+ bit：前椅子禁止"], ["prominent", "/ˈprɒmɪnənt/", "adj.", "杰出的", "拆分：pro（前）+ min（你）+ ent：前你杰出"], ["promote", "/prəˈməʊt/", "v.", "促进", "拆分：pro（前）+ mote（摸）：前摸促进"], ["proper", "/ˈprɒpə(r)/", "adj.", "合适的", "拆分：pro（前）+ per（破）：前破合适"], ["propose", "/prəˈpəʊz/", "v.", "提议", "拆分：pro（前）+ pose（姿势）：前姿势提议"], ["prospect", "/ˈprɒspekt/", "n.", "前景", "拆分：pro（前）+ spec（看）+ t：前看前景"], ["provide", "/prəˈvaɪd/", "v.", "提供", "拆分：pro（前）+ vide（看）：前看提供"], ["publish", "/ˈpʌblɪʃ/", "v.", "出版", "拆分：pub（酒吧）+ lish：酒吧出版"], ["pursue", "/pəˈsjuː/", "v.", "追求", "拆分：pur（扑）+ sue（诉）：扑诉追求"], ["qualify", "/ˈkwɒlɪfaɪ/", "v.", "使具备资格", "拆分：qual（酷）+ i（蜡烛）+ fy：酷蜡烛资格"], ["realize", "/ˈriːəlaɪz/", "v.", "意识到", "拆分：real（真）+ ize：真意识"], ["recover", "/rɪˈkʌvə(r)/", "v.", "恢复", "拆分：re（热）+ cover（盖）：热盖恢复"], ["reduce", "/rɪˈdjuːs/", "v.", "减少", "拆分：re（热）+ duce（带）：热带减少"], ["reflect", "/rɪˈflekt/", "v.", "反映", "拆分：re（热）+ flect（折）：热折反映"], ["reform", "/rɪˈfɔːm/", "v.", "改革", "拆分：re（热）+ form（表格）：热表格改革"], ["regulate", "/ˈreɡjuleɪt/", "v.", "管理", "拆分：re（热）+ gu（古）+ late：热古管理"], ["reject", "/rɪˈdʒekt/", "v.", "拒绝", "拆分：re（热）+ ject（扔）：热扔拒绝"], ["relate", "/rɪˈleɪt/", "v.", "关联", "拆分：re（热）+ late（晚）：热晚关联"], ["relief", "/rɪˈliːf/", "n.", "缓解", "拆分：re（热）+ lief（愿意）：热愿意缓解"], ["rely", "/rɪˈlaɪ/", "v.", "依赖", "拆分：re（热）+ ly（里）：热里依赖"], ["remain", "/rɪˈmeɪn/", "v.", "保持", "拆分：re（热）+ main（主要）：热主要保持"], ["remark", "/rɪˈmɑːk/", "v./n.", "评论", "拆分：re（热）+ mark（标记）：热标记评论"], ["remind", "/rɪˈmaɪnd/", "v.", "提醒", "拆分：re（热）+ mind（想）：热想提醒"], ["remove", "/rɪˈmuːv/", "v.", "移除", "拆分：re（热）+ move（移动）：热移动移除"], ["replace", "/rɪˈpleɪs/", "v.", "取代", "拆分：re（热）+ place（地方）：热地方取代"], ["require", "/rɪˈkwaɪə(r)/", "v.", "需要", "拆分：re（热）+ quire（求）：热求需要"], ["resemble", "/rɪˈzembl/", "v.", "类似", "拆分：re（热）+ sem（一样）+ ble：热一样类似"], ["reserve", "/rɪˈzɜːv/", "v./n.", "保留", "拆分：re（热）+ serve（服务）：热服务保留"], ["resolve", "/rɪˈzɒlv/", "v.", "解决", "拆分：re（热）+ solve（解决）：热解决"], ["respect", "/rɪˈspekt/", "v./n.", "尊重", "拆分：re（热）+ spect（看）：热看尊重"], ["respond", "/rɪˈspɒnd/", "v.", "回应", "拆分：re（热）+ spond（绑）：热绑回应"], ["restore", "/rɪˈstɔː(r)/", "v.", "恢复", "拆分：re（热）+ store（储存）：热储存恢复"], ["restrict", "/rɪˈstrɪkt/", "v.", "限制", "拆分：re（热）+ strict（严格）：热严格限制"], ["reveal", "/rɪˈviːl/", "v.", "揭示", "拆分：re（热）+ veal（真）：热真揭示"], ["reward", "/rɪˈwɔːd/", "n./v.", "奖励", "拆分：re（热）+ ward（守卫）：热守卫奖励"], ["satisfy", "/ˈsætɪsfaɪ/", "v.", "使满意", "拆分：sat（坐）+ is（是）+ fy：坐是满意"], ["schedule", "/ˈʃedjuːl/", "n./v.", "日程", "拆分：sch（是）+ edu（你）+ le：是你日程"], ["seek", "/siːk/", "v.", "寻找", "拆分：see（看）+ k（机关枪）：看机关枪寻找"], ["select", "/sɪˈlekt/", "v.", "选择", "拆分：se（蛇）+ lect（选）：蛇选选择"], ["senior", "/ˈsiːniə(r)/", "adj.", "年长的", "拆分：sen（森）+ ior：森里年长"], ["sensible", "/ˈsensəbl/", "adj.", "明智的", "拆分：sen（森）+ sible（能）：森里能明智"], ["sensitive", "/ˈsensɪtɪv/", "adj.", "敏感的", "拆分：sen（森）+ sit（坐）+ ive：森里坐敏感"], ["separate", "/ˈsepəreɪt/", "v.", "分开", "拆分：se（蛇）+ par（配）+ ate：蛇配分开"], ["significant", "/sɪɡˈnɪfɪkənt/", "adj.", "重要的", "拆分：sig（签名）+ ni（你）+ ficant：签名你重要"], ["similar", "/ˈsɪmələ(r)/", "adj.", "相似的", "拆分：si（四）+ mil（米）+ ar：四米相似"], ["source", "/sɔːs/", "n.", "来源", "拆分：sou（搜）+ rce：搜索来源"], ["specific", "/spəˈsɪfɪk/", "adj.", "具体的", "拆分：spec（看）+ if（如果）+ ic：看如果具体"], ["spread", "/spred/", "v./n.", "传播", "拆分：s（海马）+ pread：海马传播"], ["stable", "/ˈsteɪbl/", "adj.", "稳定的", "拆分：st（石头）+ able：石头稳定"], ["strategy", "/ˈstrætədʒi/", "n.", "策略", "拆分：str（土人）+ ate（吃）+ gy：土人吃策略"], ["strength", "/streŋθ/", "n.", "力量", "拆分：st（石头）+ reng（人）+ th：石头人力量"], ["stress", "/stres/", "n./v.", "压力", "拆分：st（石头）+ res（蛇）：石头蛇压力"], ["structure", "/ˈstrʌktʃə(r)/", "n.", "结构", "拆分：str（土人）+ uct（你）+ ure：土人你结构"], ["struggle", "/ˈstrʌɡl/", "v.", "奋斗", "拆分：str（土人）+ uggle：土人奋斗"], ["survey", "/səˈveɪ/", "n./v.", "调查", "拆分：sur（在上）+ vey（看）：在上看调查"], ["survive", "/səˈvaɪv/", "v.", "幸存", "拆分：sur（在上）+ vive（活）：在上活幸存"], ["suspect", "/səˈspekt/", "v./n.", "怀疑", "拆分：sus（苏）+ pect（看）：苏看怀疑"], ["symbol", "/ˈsɪmbl/", "n.", "象征", "拆分：sym（神）+ bol（球）：神球象征"], ["system", "/ˈsɪstəm/", "n.", "系统", "拆分：sys（是）+ tem（他们）：是他们系统"], ["technique", "/tekˈniːk/", "n.", "技术", "拆分：tech（特）+ nique（你）：特你技术"], ["technology", "/tekˈnɒlədʒi/", "n.", "技术", "拆分：tech（特）+ no（不）+ logy（逻辑）：特不逻辑技术"], ["tendency", "/ˈtendənsi/", "n.", "倾向", "拆分：ten（十）+ dency：十倾向"], ["threat", "/θret/", "n.", "威胁", "拆分：th（图画）+ reat（热）：图画热威胁"], ["treasure", "/ˈtreʒə(r)/", "n.", "财富", "拆分：tr（土人）+ easure：土人财富"], ["tremendous", "/trəˈmendəs/", "adj.", "巨大的", "拆分：trem（颤抖）+ END（结束）+ ous：颤抖结束巨大"], ["trend", "/trend/", "n.", "趋势", "拆分：tr（土人）+ end：土人趋势"], ["typical", "/ˈtɪpɪkl/", "adj.", "典型的", "拆分：typ（类型）+ ical：类型典型"], ["unique", "/juˈniːk/", "adj.", "独特的", "拆分：u（水桶）+ nique（你）：水桶你独特"], ["valuable", "/ˈvæljuəbl/", "adj.", "有价值的", "拆分：val（值）+ uable：值有价值"], ["variety", "/vəˈraɪəti/", "n.", "多样性", "拆分：va（娃）+ ri（日）+ ety：娃日多样"], ["various", "/ˈveəriəs/", "adj.", "各种各样的", "拆分：va（娃）+ rious：娃多样"], ["victim", "/ˈvɪktɪm/", "n.", "受害者", "拆分：vic（威）+ tim（你）：威你受害者"], ["violence", "/ˈvaɪələns/", "n.", "暴力", "拆分：vi（威）+ ol（油）+ ence：威油暴力"], ["virtue", "/ˈvɜːtʃuː/", "n.", "美德", "拆分：vir（圆）+ tue（你）：圆你美德"], ["wisdom", "/ˈwɪzdəm/", "n.", "智慧", "拆分：wi（威）+ sdom：威智慧"], ["witness", "/ˈwɪtnəs/", "n./v.", "证人", "拆分：wit（看）+ ness：看见的证人"], ["wonder", "/ˈwʌndə(r)/", "v./n.", "想知道", "拆分：won（赢）+ der：赢了想知道"], ["worth", "/wɜːθ/", "n./adj.", "价值", "拆分：wo（我）+ rt（人）+ h：我人价值"]]}, "poems": [{"title": "秋夕", "author": "杜牧", "lines": "银烛秋光冷画屏，轻罗小扇扑流萤。\n天阶夜色凉如水，坐看牵牛织女星。", "translation": "银烛的烛光映着冷清的画屏，手执绫罗小扇扑打萤火虫。夜色里的石阶清凉如冷水，静坐凝视天河两旁的牛郎织女星。", "image_hint": "图解：银烛、冷清的画屏、扑萤的小扇、夜色石阶、牵牛织女星。"}, {"title": "咏柳", "author": "贺知章", "lines": "碧玉妆成一树高，万条垂下绿丝绦。\n不知细叶谁裁出，二月春风似剪刀。", "notes": "妆：装饰，打扮。绦（tāo）：用丝编成的绳带，这里指像丝带一样的柳条。", "translation": "高高的柳树长满了翠绿的新叶，轻柔的柳枝垂下来，就像万条轻轻飘动的绿色丝带。这一片片纤细柔美的柳叶，是谁精心裁剪出来的呢？就是这早春二月的风，温暖和煦，恰似神奇灵巧的剪刀，裁剪出了一丝丝柳叶，装点出锦绣大地。", "image_hint": "图解：一棵柳树像用碧绿的叶子装饰；柳丝垂下来像绿色丝带；柳叶旁有燕子在飞；天上有一把绿剪刀。"}, {"title": "黄鹤楼送孟浩然之广陵", "author": "李白", "lines": "故人西辞黄鹤楼，烟花三月下扬州。\n孤帆远影碧空尽，唯见长江天际流。", "notes": "黄鹤楼：楼名，在今湖北武汉。之：去、到。故人：这里指老朋友。烟花：形容花开得繁茂，像浮动的烟雾。", "translation": "友人在黄鹤楼向我挥手告别，阳光明媚的三月他要去扬州。他的帆影渐渐消失在碧空中，只看见滚滚长江在天边奔流。", "image_hint": "图解：黄鹤楼、挥手送别、三月繁花、远去的孤帆、天边奔流的长江。"}, {"title": "泊船瓜洲", "author": "王安石", "lines": "京口瓜洲一水间，钟山只隔数重山。\n春风又绿江南岸，明月何时照我还。", "notes": "瓜洲：在长江北岸，扬州南面。京口：今江苏镇江。钟山：今南京市紫金山。", "translation": "京口和瓜洲不过一水之遥，钟山也只隔着几重青山。温柔的春风又吹绿了大江南岸，可是，天上的明月呀，你什么时候才能够照着我回家呢？", "image_hint": "图解：京口与瓜洲隔水相望、数重青山、被春风吹绿的江岸、照着归人的明月。"}, {"title": "回乡偶书", "author": "贺知章", "lines": "少小离家老大回，乡音无改鬓毛衰。\n儿童相见不相识，笑问客从何处来。", "translation": "年少时离开家乡，到老了才回来，口音没改变，鬓发却已经疏落。村里的儿童见了面不认识，笑着问我这客人是从哪里来的。"}, {"title": "乡村四月", "author": "翁卷", "lines": "绿遍山原白满川，子规声里雨如烟。\n乡村四月闲人少，才了蚕桑又插田。", "translation": "山坡和原野一片翠绿，河川水面映着白光，杜鹃声里细雨如烟。乡村四月里没有闲人，刚做完养蚕采桑，又忙着插秧。"}, {"title": "村居", "author": "高鼎", "lines": "草长莺飞二月天，拂堤杨柳醉春烟。\n儿童散学归来早，忙趁东风放纸鸢。", "translation": "二月里青草生长、黄莺飞舞，杨柳轻拂堤岸，沉醉在春天的烟霭中。孩子们放学回来得早，赶忙趁着东风放起了风筝。"}, {"title": "春夜喜雨", "author": "杜甫", "lines": "好雨知时节，当春乃发生。\n随风潜入夜，润物细无声。\n野径云俱黑，江船火独明。\n晓看红湿处，花重锦官城。", "notes": "乃：就。发生：催发植物生长。潜：暗暗地，悄悄地。润物：使植物受到雨水的滋养。野径：乡间小路。花重：花因沾着雨水，显得饱满沉重的样子。锦官城：成都的别称。", "translation": "好雨似乎会挑选时辰，降临在万物萌生之春。伴随和风，悄悄进入夜幕，细细密密，滋润大地万物。浓浓乌云笼罩田野小路，点点灯火闪烁江上渔船。明早再看带露的鲜花，成都满城必将繁花盛开。", "image_hint": "图解：春雨、夜色中的野径与江船灯火、清晨带露的繁花。"}, {"title": "寒食", "author": "韩翃", "lines": "春城无处不飞花，寒食东风御柳斜。\n日暮汉宫传蜡烛，轻烟散入五侯家。", "notes": "暮春的长安城里杨花漫天飞舞，寒食节东风吹斜了宫中的柳树。黄昏时分，宫里开始赏赐新蜡烛，轻烟率先升起在皇亲国戚的家里。"}, {"title": "约客", "author": "赵师秀", "lines": "黄梅时节家家雨，青草池塘处处蛙。\n有约不来过夜半，闲敲棋子落灯花。", "notes": "梅子黄时，处处都在下雨，青草长满池塘，传来阵阵蛙声。时过午夜，已约请好的客人还没有来，感到无聊的我用棋子轻轻地敲着棋盘，震落了灯花。"}, {"title": "过故人庄", "author": "孟浩然", "lines": "故人具鸡黍，邀我至田家。\n绿树村边合，青山郭外斜。\n开轩面场圃，把酒话桑麻。\n待到重阳日，还来就菊花。", "translation": "老朋友准备丰盛的饭菜，邀请我到他田舍做客。翠绿的树林围绕着村落，一脉青山在城郭外隐隐横斜。推开窗户面对谷场菜园，共饮美酒，闲谈农务。等到九九重阳节到来时，我还要来这里观赏菊花。"}, {"title": "山居秋暝", "author": "王维", "lines": "空山新雨后，天气晚来秋。\n明月松间照，清泉石上流。\n竹喧归浣女，莲动下渔舟。\n随意春芳歇，王孙自可留。", "translation": "新雨过后山谷里空旷清新，初秋傍晚的天气特别凉爽。明月映照着幽静的松林间，清澈泉水在山石上淙淙淌流。竹林中少女喧笑洗衣归来，莲叶轻摇是上游荡下轻舟。任凭春天的美景消歇，眼前的秋景足以令人流连。"}, {"title": "登鹳雀楼", "author": "王之涣", "lines": "白日依山尽，黄河入海流。\n欲穷千里目，更上一层楼。", "translation": "夕阳依着群山落下，黄河向着大海奔流。想要看到千里之外的风光，就要再登上更高的一层楼。"}, {"title": "山行", "author": "杜牧", "lines": "远上寒山石径斜，白云生处有人家。\n停车坐爱枫林晚，霜叶红于二月花。", "translation": "沿着弯弯的石径登上深秋的山峦，白云升腾的地方隐隐有人家。停下车是因为喜爱傍晚的枫林，经霜的枫叶比二月的春花还要红。"}, {"title": "暮江吟", "author": "白居易", "lines": "一道残阳铺水中，半江瑟瑟半江红。\n可怜九月初三夜，露似真珠月似弓。", "translation": "一道残阳铺在江面上，江水一半碧绿一半通红。最可爱的是九月初三的夜晚，露水像珍珠，新月像弯弓。"}, {"title": "题临安邸", "author": "林升", "lines": "山外青山楼外楼，西湖歌舞几时休。\n暖风熏得游人醉，直把杭州作汴州。", "translation": "青山之外还有青山，高楼之外还有高楼，西湖边的歌舞什么时候才能停止？暖风把游人熏得如醉如痴，简直把杭州当成了汴州。"}, {"title": "宿建德江", "author": "孟浩然", "lines": "移舟泊烟渚，日暮客愁新。\n野旷天低树，江清月近人。", "translation": "把小船停泊在烟雾缭绕的小洲边，日暮时分，旅人的愁绪又添了几分。旷野无边，天比树低，江水清澈，月亮仿佛离人很近。"}, {"title": "行路难·其一", "author": "李白", "lines": "金樽清酒斗十千，玉盘珍羞直万钱。\n停杯投箸不能食，拔剑四顾心茫然。\n欲渡黄河冰塞川，将登太行雪满山。\n闲来垂钓碧溪上，忽复乘舟梦日边。\n行路难，行路难，多歧路，今安在？\n长风破浪会有时，直挂云帆济沧海。", "notes": "羞同“馐”；直同“值”。雪满山一作：雪暗天。碧一作：坐。", "translation": "金杯中的美酒一斗价十千，玉盘里的菜肴珍贵值万钱。心中郁闷，我放下杯筷不愿进餐；拔出宝剑环顾四周，心里一片茫然。想渡黄河，冰雪却冻封了河川；想登太行山，莽莽风雪早已封山。像姜尚垂钓溪上，闲待东山再起；又像伊尹做梦，乘船经过日边。人生道路多么艰难，多么艰难；歧路纷杂，如今又身在何处？相信乘风破浪的时机总会到来，到时定要扬起征帆，横渡沧海！"}, {"title": "忆江南", "author": "王安石", "lines": "城南城北万株花，池面冰消水见沙。\n回首江南春更好，梦为蝴蝶亦还家。", "translation": "城南城北种着万株花，池面的冰融化了，水里露出沙洲。回望江南，春天更加美好，连做梦化成蝴蝶也要飞回家乡。"}, {"title": "孙权劝学", "author": "司马光", "lines": "初，权谓吕蒙曰：“卿今当涂掌事，不可不学！”蒙辞以军中多务。权曰：“孤岂欲卿治经为博士邪！但当涉猎，见往事耳。卿言多务，孰若孤？孤常读书，自以为大有所益。”蒙乃始就学。及鲁肃过寻阳，与蒙论议，大惊曰：“卿今者才略，非复吴下阿蒙！”蒙曰：“士别三日，即更刮目相待，大兄何见事之晚乎！”肃遂拜蒙母，结友而别。", "translation": "当初，孙权对吕蒙说：“你现在当权掌管政事，不可以不学习！”吕蒙用军中事务繁多的理由来推托。孙权说：“我难道是想要你研究儒家经典成为传授经书的学官吗？只是应当粗略地阅读，了解历史罢了。你说军中事务繁多，谁能比得上我呢？我经常读书，自认为有很大的好处。”吕蒙于是就开始学习。等到鲁肃到寻阳的时候，和吕蒙论议国家大事，惊讶地说：“你现在的才干和谋略，不再是以前那个吴县的阿蒙了！”吕蒙说：“和有抱负的人分开一段时间后，就要用新的眼光来看待，长兄怎么认清事物这么晚啊！”于是鲁肃拜见吕蒙的母亲，与吕蒙结为朋友才分别。"}, {"title": "静夜思", "author": "李白", "lines": "床前明月光，疑是地上霜。\n举头望明月，低头思故乡。", "translation": "床前洒满皎洁的月光，让人怀疑是地上结了一层霜。抬起头望着天上的明月，低下头思念起远方的故乡。", "image_hint": "图解：床前月光如霜、抬头望月、低头思乡的三个画面依次相连。"}, {"title": "咏鹅", "author": "骆宾王", "lines": "鹅，鹅，鹅，曲项向天歌。\n白毛浮绿水，红掌拨清波。", "translation": "鹅啊鹅，弯着脖子向着天空鸣叫。洁白的羽毛浮在碧绿的水面上，红色的脚掌拨动着清澈的水波。", "image_hint": "图解：白鹅、弯颈向天、白毛浮绿水、红掌拨清波。"}, {"title": "春晓", "author": "孟浩然", "lines": "春眠不觉晓，处处闻啼鸟。\n夜来风雨声，花落知多少。", "translation": "春天的夜里睡得香甜，不知不觉就到了天亮，到处都能听到鸟儿啼叫。回想昨夜的风雨声，不知吹落了多少花儿。", "image_hint": "图解：春睡醒来、鸟啼处处、昨夜风雨、落花满地。"}, {"title": "悯农（其二）", "author": "李绅", "lines": "锄禾日当午，汗滴禾下土。\n谁知盘中餐，粒粒皆辛苦。", "translation": "正午时分农民还在田里锄禾，汗水滴落在禾苗下的泥土里。谁能想到盘子里的饭食，每一粒都凝结着辛勤劳作。", "image_hint": "图解：烈日锄禾、汗滴入土、盘中米饭、粒粒辛苦。"}, {"title": "望庐山瀑布", "author": "李白", "lines": "日照香炉生紫烟，遥看瀑布挂前川。\n飞流直下三千尺，疑是银河落九天。", "translation": "阳光照在香炉峰上升起紫色的烟霞，远远望去，瀑布像一条长河挂在山前。飞腾的水流直冲而下有三千尺，让人怀疑是银河从九天倾泻而下。", "image_hint": "图解：香炉峰紫烟、瀑布挂山前、飞流直下、银河落九天。"}, {"title": "绝句", "author": "杜甫", "lines": "两个黄鹂鸣翠柳，一行白鹭上青天。\n窗含西岭千秋雪，门泊东吴万里船。", "translation": "两只黄鹂在翠绿的柳枝间鸣叫，一行白鹭飞上蔚蓝的天空。窗口能望见西岭上千年不化的积雪，门前停泊着将要驶向东吴的万里航船。", "image_hint": "图解：黄鹂翠柳、白鹭青天、西岭积雪、门前航船。"}, {"title": "江雪", "author": "柳宗元", "lines": "千山鸟飞绝，万径人踪灭。\n孤舟蓑笠翁，独钓寒江雪。", "translation": "千山万岭看不到一只飞鸟，万条小路上不见一个人的踪影。江面上只有一只孤舟，一位披蓑戴笠的老翁，在漫天风雪的寒江上独自垂钓。", "image_hint": "图解：千山无鸟、万径无人、孤舟、蓑笠翁、寒江独钓。"}, {"title": "元日", "author": "王安石", "lines": "爆竹声中一岁除，春风送暖入屠苏。\n千门万户曈曈日，总把新桃换旧符。", "translation": "在爆竹声中旧的一年过去了，春风把暖意送进了屠苏酒。千家万户都沐浴在旭日的光辉里，家家都把新的桃符换下旧的桃符。", "image_hint": "图解：爆竹、春风暖酒、旭日曈曈、新桃换旧符。"}, {"title": "清明", "author": "杜牧", "lines": "清明时节雨纷纷，路上行人欲断魂。\n借问酒家何处有，牧童遥指杏花村。", "translation": "清明时节春雨纷纷而下，路上的行人心情惆怅，仿佛魂魄要与亲人断绝。请问哪里有酒家可以歇脚，牧童远远地指向杏花深处的村庄。", "image_hint": "图解：清明细雨、行人断魂、询问酒家、牧童遥指杏花村。"}, {"title": "九月九日忆山东兄弟", "author": "王维", "lines": "独在异乡为异客，每逢佳节倍思亲。\n遥知兄弟登高处，遍插茱萸少一人。", "translation": "独自在异乡做客，每到节日就加倍思念亲人。遥想兄弟们今天登高的地方，他们插上茱萸时会发现少了我一个人。", "image_hint": "图解：异乡为客、佳节思亲、兄弟登高、插茱萸少一人。"}, {"title": "鹿柴", "author": "王维", "lines": "空山不见人，但闻人语响。\n返景入深林，复照青苔上。", "translation": "空旷的山中看不见人影，只听到有人说话的声音在回响。夕阳的余晖照进幽深的树林，又映照在青苔之上。", "image_hint": "图解：空山、人语回响、夕阳入林、光照青苔。"}, {"title": "相思", "author": "王维", "lines": "红豆生南国，春来发几枝。\n愿君多采撷，此物最相思。", "translation": "红豆生长在南方，春天到来时又长出了几枝新条。希望朋友多多采摘，这红豆最能寄托相思之情。", "image_hint": "图解：红豆生南国、春发新枝、采撷红豆、相思寄托。"}, {"title": "寻隐者不遇", "author": "贾岛", "lines": "松下问童子，言师采药去。\n只在此山中，云深不知处。", "translation": "在松树下询问童子，童子说师父采药去了。师父就在这座山里，可是云雾浓重，不知道他究竟在哪里。", "image_hint": "图解：松下问童子、师采药去、山中云雾、不知处。"}, {"title": "赠汪伦", "author": "李白", "lines": "李白乘舟将欲行，忽闻岸上踏歌声。\n桃花潭水深千尺，不及汪伦送我情。", "translation": "我乘着小船正要出发，忽然听到岸上传来踏歌相送的声音。桃花潭的水纵然深达千尺，也比不上汪伦送别我的情谊深。", "image_hint": "图解：乘舟欲行、岸上踏歌、桃花潭水、送别深情。"}, {"title": "早发白帝城", "author": "李白", "lines": "朝辞白帝彩云间，千里江陵一日还。\n两岸猿声啼不住，轻舟已过万重山。", "translation": "清晨告别彩云缭绕的白帝城，千里之外的江陵一天就能返回。两岸的猿声还在耳边回荡，轻快的小船已经穿过了万重山峦。", "image_hint": "图解：白帝彩云、一日还江陵、猿声不断、轻舟过万重山。"}, {"title": "望天门山", "author": "李白", "lines": "天门中断楚江开，碧水东流至此回。\n两岸青山相对出，孤帆一片日边来。", "translation": "天门山从中间断开，长江之水奔涌而过，碧绿的江水东流到这里又回旋激荡。两岸的青山相对而出，一片孤帆从太阳边驶来。", "image_hint": "图解：天门中断、碧水回旋、青山相对、孤帆日边。"}, {"title": "题西林壁", "author": "苏轼", "lines": "横看成岭侧成峰，远近高低各不同。\n不识庐山真面目，只缘身在此山中。", "translation": "从正面看是连绵的山岭，从侧面看是陡峭的山峰，远看、近看、高处、低处看到的都不一样。看不清庐山的真实面目，只因为自己就站在这座山里面。", "image_hint": "图解：横看山岭、侧看山峰、远近高低各不同、身在山中。"}, {"title": "游山西村", "author": "陆游", "lines": "莫笑农家腊酒浑，丰年留客足鸡豚。\n山重水复疑无路，柳暗花明又一村。", "translation": "不要笑话农家腊月的酒浑浊，丰收之年他们待客有充足的鸡和猪。山峦重叠水流曲折，正担心无路可走，忽然柳绿花红，眼前又出现一个村庄。", "image_hint": "图解：农家腊酒、留客鸡豚、山重水复、柳暗花明又一村。"}, {"title": "送元二使安西", "author": "王维", "lines": "渭城朝雨浥轻尘，客舍青青柳色新。\n劝君更尽一杯酒，西出阳关无故人。", "translation": "渭城的早晨下了一场雨，湿润了路上的轻尘，客舍旁的柳树被雨水洗出清新的绿色。劝你再喝尽这一杯酒，向西走出阳关，就再也没有老朋友了。", "image_hint": "图解：朝雨浥尘、客舍柳新、劝酒一杯、西出阳关。"}, {"title": "示儿", "author": "陆游", "lines": "死去元知万事空，但悲不见九州同。\n王师北定中原日，家祭无忘告乃翁。", "translation": "人死后本来就知道万事皆空，唯一悲伤的是没能看到国家统一。当朝廷大军收复中原的那一天，家祭时不要忘记把这个消息告诉你的父亲。", "image_hint": "图解：万事空、悲不见统一、王师定中原、家祭告乃翁。"}, {"title": "饮湖上初晴后雨", "author": "苏轼", "lines": "水光潋滟晴方好，山色空蒙雨亦奇。\n欲把西湖比西子，淡妆浓抹总相宜。", "translation": "晴天时西湖水波荡漾风光正好，雨天时山色朦胧也很奇妙。想把西湖比作美人西施，无论淡妆还是浓抹，总是那么相称动人。", "image_hint": "图解：晴时水光、雨时山色、西湖比西子、淡妆浓抹。"}, {"title": "惠崇春江晚景", "author": "苏轼", "lines": "竹外桃花三两枝，春江水暖鸭先知。\n蒌蒿满地芦芽短，正是河豚欲上时。", "translation": "竹林外有几枝桃花刚刚开放，春天的江水变暖，鸭子最先感知。蒌蒿长满地面，芦芽刚刚冒出短芽，正是河豚逆流而上的时节。", "image_hint": "图解：竹外桃花、春江鸭先知、蒌蒿满地、芦芽河豚。"}, {"title": "夏日绝句", "author": "李清照", "lines": "生当作人杰，死亦为鬼雄。\n至今思项羽，不肯过江东。", "translation": "活着就应当做人中豪杰，死了也要做鬼中英雄。到今天人们还在思念项羽，因为他不肯退回江东苟且偷生。", "image_hint": "图解：生作人杰、死为鬼雄、思项羽、不肯过江东。"}, {"title": "己亥杂诗", "author": "龚自珍", "lines": "九州生气恃风雷，万马齐喑究可哀。\n我劝天公重抖擞，不拘一格降人才。", "translation": "九州的勃勃生机依靠风雷般的变革，万马齐喑、一片沉寂的局面实在可悲。我劝天公重新振作精神，打破常规降下各式各样的人才。", "image_hint": "图解：九州风雷、万马齐喑、天公抖擞、降下人才。"}, {"title": "竹石", "author": "郑燮", "lines": "咬定青山不放松，立根原在破岩中。\n千磨万击还坚劲，任尔东西南北风。", "translation": "竹子咬定青山绝不放松，它的根须原本就扎在破裂的岩石中。经历千万次磨炼依然坚韧挺拔，任凭东西南北风如何吹拂。", "image_hint": "图解：咬定青山、根在破岩、千磨万击、任凭风雨。"}, {"title": "石灰吟", "author": "于谦", "lines": "千锤万凿出深山，烈火焚烧若等闲。\n粉骨碎身浑不怕，要留清白在人间。", "translation": "石灰经过千万次锤凿才从深山开采出来，面对烈火焚烧就像平常事一样坦然。哪怕粉身碎骨也全不畏惧，只为把清白留在人世间。", "image_hint": "图解：深山开采、烈火焚烧、粉身碎骨、留得清白。"}, {"title": "春望", "author": "杜甫", "lines": "国破山河在，城春草木深。\n感时花溅泪，恨别鸟惊心。", "translation": "国都沦陷，山河依旧存在，春天的长安城里草木丛生。感伤时局，看到花开反而落泪；痛恨离别，听到鸟鸣也心惊。", "image_hint": "图解：国破山河、城春草深、花溅泪、鸟惊心。"}, {"title": "赤壁", "author": "杜牧", "lines": "折戟沉沙铁未销，自将磨洗认前朝。\n东风不与周郎便，铜雀春深锁二乔。", "translation": "折断的戟沉埋在沙中还没有销蚀，我把它磨洗干净，认出是前朝的遗物。假如当年东风没有帮周瑜的忙，那么铜雀台春深之时就会锁住二乔了。", "image_hint": "图解：折戟沉沙、磨洗认前朝、东风助周郎、铜雀锁二乔。"}, {"title": "天净沙·秋思", "author": "马致远", "lines": "枯藤老树昏鸦，小桥流水人家，古道西风瘦马。\n夕阳西下，断肠人在天涯。", "translation": "枯藤缠绕着老树，黄昏时乌鸦栖息，小桥下流水潺潺，旁边有几户人家。古老的道路上西风萧瑟，一匹瘦马缓缓前行。夕阳正向西落下，那伤心断肠的人还漂泊在天涯。", "image_hint": "图解：枯藤老树昏鸦、小桥流水人家、古道西风瘦马、夕阳断肠人。"}, {"title": "关雎", "author": "《诗经》", "lines": "关关雎鸠，在河之洲。\n窈窕淑女，君子好逑。\n参差荇菜，左右流之。\n窈窕淑女，寤寐求之。", "translation": "雎鸠鸟关关地鸣叫，落在河中的小洲上。美丽贤淑的女子，是君子的好配偶。长短不齐的荇菜，在船的左右两边采摘。美丽贤淑的女子，君子日夜都在追求。", "image_hint": "图解：雎鸠和鸣、河洲、窈窕淑女、君子求之、采荇菜。"}], "texts": [{"title": "像树一样成长", "author": "（课件演讲文章）", "paragraphs": ["人的生活方式有两种，第一种方式是像草一样活着，你尽管活着，每年还在成长，但是你毕竟是一棵草，你吸收雨露阳光，但是长不大。", "人们可以踩过你，但是人们不会因为你的痛苦，而他产生痛苦；人们不会因为你被踩了，而来怜悯你，因为人们本身就没有看到你。", "所以我们每一个人，都应该像树一样的成长，即使我们现在什么都不是，但是只要你有树的种子，即使你被踩到泥土中间，你依然能够吸收泥土的养分，自己成长起来。"], "keywords": ["两种活法：草与树", "被踩无人怜", "做树的种子，自己成长"], "tip": "三段用三个画面：草长不大、被踩不痛、树种子成长，按顺序串联。"}, {"title": "春", "author": "朱自清", "paragraphs": ["盼望着，盼望着，东风来了，春天的脚步近了。", "一切都像刚睡醒的样子，欣欣然张开了眼。山朗润起来了，水涨起来了，太阳的脸红起来了。", "小草偷偷地从土里钻出来，嫩嫩的，绿绿的。园子里，田野里，瞧去，一大片一大片满是的。", "桃树、杏树、梨树，你不让我，我不让你，都开满了花赶趟儿。红的像火，粉的像霞，白的像雪。", "雨是最寻常的，一下就是三两天。可别恼。看，像牛毛，像花针，像细丝，密密地斜织着，人家屋顶上全笼着一层薄烟。"], "keywords": ["盼春", "万物苏醒", "春草", "春花", "春雨"], "tip": "按盼春→醒→草→花→雨的顺序，每段记一个画面：盼春的身影、山水分色、绿草满地、百花争艳、细雨如丝。"}, {"title": "济南的冬天", "author": "老舍", "paragraphs": ["对于一个在北平住惯的人，像我，冬天要是不刮风，便觉得是奇迹；济南的冬天是没有风声的。对于一个刚由伦敦回来的人，像我，冬天要能看得见日光，便觉得是怪事；济南的冬天是响晴的。", "设若单单是有阳光，那也算不了出奇。请闭上眼睛想：一个老城，有山有水，全在天底下晒着阳光，暖和安适地睡着，只等春风来把它们唤醒，这是不是个理想的境界？", "小山整把济南围了个圈儿，只有北边缺着点口儿。这一圈小山在冬天特别可爱，好像是把济南放在一个小摇篮里，它们安静不动地低声地说：‘你们放心吧，这儿准保暖和。’"], "keywords": ["无风声、响晴", "老城安睡", "小山如摇篮"], "tip": "三段三个画面：对比出奇→老城安睡→小山摇篮，突出“温晴”。"}, {"title": "匆匆", "author": "朱自清", "paragraphs": ["燕子去了，有再来的时候；杨柳枯了，有再青的时候；桃花谢了，有再开的时候。但是，聪明的，你告诉我，我们的日子为什么一去不复返呢？", "去的尽管去了，来的尽管来着；去来的中间，又怎样地匆匆呢？早上我起来的时候，小屋里射进两三方斜斜的太阳。", "太阳他有脚啊，轻轻悄悄地挪移了；我也茫茫然跟着旋转。于是——洗手的时候，日子从水盆里过去；吃饭的时候，日子从饭碗里过去；默默时，便从凝然的双眼前过去。"], "keywords": ["去来有期，日子无痕", "晨起斜阳", "日子从身边溜走"], "tip": "抓住三组对比：燕去还来、柳枯还青、花谢还开，再记“洗手、吃饭、默默”三个时间流逝的画面。"}, {"title": "荷塘月色", "author": "朱自清", "paragraphs": ["曲曲折折的荷塘上面，弥望的是田田的叶子。叶子出水很高，像亭亭的舞女的裙。", "层层的叶子中间，零星地点缀着些白花，有袅娜地开着的，有羞涩地打着朵儿的；正如一粒粒的明珠，又如碧天里的星星，又如刚出浴的美人。", "微风过处，送来缕缕清香，仿佛远处高楼上渺茫的歌声似的。这时候叶子与花也有一丝的颤动，像闪电般，霎时传过荷塘的那边去了。"], "keywords": ["荷叶如舞裙", "白花如明珠", "清香与波动"], "tip": "三段三画面：荷叶、白花、微风波动，画面要具体夸张，顺序不要乱。"}, {"title": "桂林山水", "author": "课文", "paragraphs": ["人们都说：‘桂林山水甲天下。’我们乘着木船，荡漾在漓江上，来观赏桂林的山水。", "我看见过波澜壮阔的大海，玩赏过水平如镜的西湖，却从没看见过漓江这样的水。漓江的水真静啊，静得让你感觉不到它在流动；漓江的水真清啊，清得可以看见江底的沙石；漓江的水真绿啊，绿得仿佛那是一块无瑕的翡翠。", "这样的山围绕着这样的水，这样的水倒映着这样的山，再加上空中云雾迷蒙，山间绿树红花，江上竹筏小舟，让你感到像是走进了连绵不断的画卷，真是‘舟行碧波上，人在画中游’。"], "keywords": ["桂林山水甲天下", "水静、清、绿", "山映水，人在画中游"], "tip": "先记总起句，再记“静、清、绿”三个特点，最后记“舟行碧波、人在画中”的结尾。"}, {"title": "记承天寺夜游", "author": "苏轼", "paragraphs": ["元丰六年十月十二日夜，解衣欲睡，月色入户，欣然起行。念无与为乐者，遂至承天寺寻张怀民。", "怀民亦未寝，相与步于中庭。庭下如积水空明，水中藻、荇交横，盖竹柏影也。", "何夜无月？何处无竹柏？但少闲人如吾两人者耳。"], "keywords": ["月色入户，寻友", "庭中如积水", "少闲人耳"], "tip": "三段：起行寻友→中庭观月→感叹闲人，重点记住“积水空明”这个画面。"}, {"title": "爱莲说", "author": "周敦颐", "paragraphs": ["水陆草木之花，可爱者甚蕃。晋陶渊明独爱菊。自李唐来，世人甚爱牡丹。", "予独爱莲之出淤泥而不染，濯清涟而不妖，中通外直，不蔓不枝，香远益清，亭亭净植，可远观而不可亵玩焉。", "予谓菊，花之隐逸者也；牡丹，花之富贵者也；莲，花之君子者也。噫！菊之爱，陶后鲜有闻。莲之爱，同予者何人？牡丹之爱，宜乎众矣。"], "keywords": ["菊与牡丹", "莲之六德", "三种花三种人"], "tip": "把莲的特点“出淤泥不染、濯清涟不妖、中通外直、不蔓不枝、香远益清、亭亭净植”串成六个画面，再对比三种花。"}, {"title": "论语（选段）", "author": "《论语》", "paragraphs": ["子曰：‘学而时习之，不亦说乎？有朋自远方来，不亦乐乎？人不知而不愠，不亦君子乎？’", "子曰：‘温故而知新，可以为师矣。’", "子曰：‘学而不思则罔，思而不学则殆。’", "子曰：‘三人行，必有我师焉。择其善者而从之，其不善者而改之。’"], "keywords": ["学而时习", "温故知新", "学思结合", "择善而从"], "tip": "四句都是孔子名言，每句记一个关键词：时习、温故、学思、择善。"}, {"title": "燕子", "author": "郑振铎", "paragraphs": ["一身乌黑光亮的羽毛，一对俊俏轻快的翅膀，加上剪刀似的尾巴，凑成了活泼机灵的小燕子。", "才下过几阵蒙蒙的细雨。微风吹拂着千万条才展开带黄色的嫩叶的柳丝。青的草，绿的叶，各色鲜艳的花，都像赶集似的聚拢来，形成了光彩夺目的春天。", "在微风中，在阳光中，燕子斜着身子在天空中掠过，唧唧地叫着，有的由这边的稻田上，一转眼飞到了那边的柳树下边；有的横掠过湖面，尾尖偶尔沾了一下水面，就看到波纹一圈一圈地荡漾开去。"], "keywords": ["燕子外形", "春景聚拢", "燕子掠过"], "tip": "按外形→春景→飞行三段，每段一个画面：燕子外形、百花赶集、掠空沾水。"}, {"title": "海上日出", "author": "巴金", "paragraphs": ["为了看日出，我常常早起。那时天还没有大亮，周围非常清净，船上只有机器的响声。", "天空还是一片浅蓝，颜色很浅。转眼间天边出现了一道红霞，慢慢扩大它的范围，加强它的亮光。我知道太阳要从天边升起来了，便不转眼地望着那里。", "果然，过了一会儿，在那个地方出现了太阳的小半边脸，红是真红，却没有亮光。太阳像负着什么重担似的，慢慢儿，一纵一纵地，使劲儿向上升。到了最后，它终于冲破了云霞，完全跳出了海面，颜色真红得可爱。一刹那间，这深红的圆东西发出夺目的亮光，射得人眼睛发痛。它旁边的云也突然有了光彩。"], "keywords": ["早起待日出", "红霞渐起", "太阳升出海面"], "tip": "三段按时间推进：早起→红霞→日出跃出海面，重点记“小半边脸、一纵一纵、跳出海面”的画面。"}, {"title": "少年闰土", "author": "鲁迅", "paragraphs": ["深蓝的天空中挂着一轮金黄的圆月，下面是海边的沙地，都种着一望无际的碧绿的西瓜，其间有一个十一二岁的少年，项带银圈，手捏一柄钢叉，向一匹猹尽力的刺去，那猹却将身一扭，反从他的胯下逃走了。", "这少年便是闰土。我认识他时，也不过十多岁，离现在将有三十年了；那时我的父亲还在世，家景也好，我正是一个少爷。", "那一年，我家是一件大祭祀的值年。这祭祀，说是三十多年才能轮到一回，所以很郑重；正月里供祖像，供品很多，祭器很讲究，拜的人也很多，祭器也很要防偷去。"], "keywords": ["月下刺猹", "三十年前", "大祭祀值年"], "tip": "第一段是名画面“月下刺猹”，先把画面记牢，再记相识与祭祀两件事。"}], "letterCodes": {"A": "苹果", "B": "笔", "C": "月牙", "D": "笛子", "E": "鹅", "F": "斧头", "G": "鸽子", "H": "椅子", "I": "蜡烛", "J": "钩子", "K": "机关枪", "L": "靴子", "M": "汉堡包", "N": "门", "O": "甜甜圈", "P": "皮鞋", "Q": "气球", "R": "小草", "S": "海马", "T": "伞", "U": "水桶", "V": "夹子", "W": "王冠", "X": "剪刀", "Y": "晒衣杆", "Z": "闪电"}, "comboCodes": {"ab": "阿伯", "bl": "玻璃", "ad": "阿弟", "br": "病人", "al": "阿里", "ch": "菜花", "ap": "阿婆", "ck": "刺客", "ar": "矮人", "cl": "齿轮", "au": "遨游", "co": "可乐", "com": "电脑", "oo": "眼镜", "cr": "超人", "or": "或者", "cu": "醋", "ou": "藕", "ic": "IC卡", "ph": "电话", "im": "姨妈", "pl": "漂亮", "ive": "夏威夷", "pr": "仆人", "sh": "上海", "dr": "大人", "sl": "森林", "fl": "俘虏", "squ": "山区", "fr": "妇人", "st": "石头", "gl": "公路", "sw": "书屋", "gr": "工人", "th": "图画", "tion": "神", "tr": "土人", "wh": "舞会"}, "wordMethods": {"归纳法": {"intro": "把有共同部分的单词归在一起记，记一个就能带出一串。", "words": [["angle", "角，角度", "基础词"], ["bangle", "手镯，脚镯", "b 拼音“臂”：手臂上戴着手镯"], ["dangle", "悬挂", "d 拼音“吊”：吊即悬挂"], ["fangle", "新款式，新发明", "f 拼音“发”：发——发明——新发明"], ["jangle", "发出刺耳的声音", "j 拼音“尖”：尖——尖叫——刺耳"], ["tangle", "纠缠", "谐音“探戈”：跳探戈的人们纠缠在一起"], ["entangle", "使纠缠", "en 前缀“使”：使跳探戈的人纠缠"], ["untangle", "解开", "un 前缀“反义”：纠缠与解开互为反义"], ["wangle", "使用策略，使用诡计", "w 拼音“我”：我用策略，有人说我用诡计"]]}, "熟词法": {"intro": "把单词拆成熟悉的词或字母，用熟词的意思来联想。", "words": [["hesitate", "犹豫", "he 他 + sit 坐 + ate 吃（eat 过去式）：他犹豫地坐着吃"], ["catcall", "喝倒彩", "cat 猫 + call 喊叫：猫对着你喊叫，就是在喝倒彩"], ["widow", "寡妇", "window 窗户，n 读“泥”：寡妇的工作是把窗户上的泥擦干净"]]}, "拼音法": {"intro": "用汉语拼音来读单词，找全拼或近似拼音，串成画面。", "words": [["change", "改变", "chang e：嫦娥改变了对猪八戒的看法"], ["danger", "危险", "dang er：挡儿（子）——危险来时母亲挡在儿子前面"], ["advantage", "优点", "ad van tage：阿弟玩他哥，他哥不生气，这是他哥的优点"]]}, "编码法": {"intro": "用字母编码（A-Z 编码表、谐音字母、拼音首字母、特定含义）拆解单词。", "words": [["boom", "繁荣", "boo 读“600” + m 麦当劳：一条街开了 600 家麦当劳，真繁荣"], ["pilot", "飞行员", "pi 屁 + lo 读“10” + t 伞：放几个屁，撑上 10 把伞，就能飞行"], ["dirty", "脏的", "di 敌 + r 人 + ty 汤圆：敌人的汤圆都是脏的，不要吃"], ["wobble", "摇晃", "wo 我 + bb 爸爸 + le 乐：我爸爸快乐地摇晃着"]]}, "谐音法": {"intro": "用整体谐音或部分谐音，把单词读成有意义的中文，再串画面。", "words": [["chase", "追赶", "谐音“锤死”：追赶上它，然后锤死它"], ["bamboo", "竹子", "谐音“半步”：竹子太重，只走了半步就累到了"], ["ambulance", "救护车", "谐音“俺不能死”：救护车来了，俺不能死"]]}, "特点法": {"intro": "观察单词本身的特点（字母组合、外形、读音），利用特点来记。", "words": [["level", "水平", "特点：正读反读都一样，像天平一样平稳，所以是“水平”"]]}, "词根词缀法": {"intro": "把单词按词根词缀模块拆分，再结合图像串联记忆（分之道：单词模块拆分 + 图像串联）。", "words": [["unhappy", "不快乐的", "un（不）+ happy（快乐）：不快乐"], ["reading", "阅读", "read（读）+ ing（进行时）：正在阅读"], ["classroom", "教室", "class（班级）+ room（房间）：班级所在的房间"]]}}, "methodsOverview": [["串联联想法（故事连锁）", "把要记的内容像锁链一样一环扣一环串起来"], ["数字编码法", "把数字固定为图像，1-100 数字编码表"], ["字母编码法", "把 A-Z 固定为图像，用于记单词"], ["记忆宫殿法", "用熟悉的地点桩做记忆舞台和提取线索"], ["口诀记忆法", "把要点编成口诀（如“提鞋赠刀王”）"], ["图像记忆法", "把资料转化成具体图像再记忆"], ["定桩记忆法", "用身体、物件等固定位置挂载记忆内容"], ["熟词法 / 拼音法 / 字母法", "英语单词：用熟词、拼音、字母拆解记忆"], ["谐音法 / 特点法", "英语单词：谐音联想、找词形特点"], ["词根词缀法", "英语单词：单词模块拆分 + 图像串联记忆"]], "leftBrain": ["语言", "数字", "线条", "顺序", "逻辑", "分析"], "rightBrain": ["图像", "颜色", "形状", "空间", "音乐", "想象力"], "memoryCompare": [["记忆内容", "声音", "图像"], ["记忆器官", "耳朵", "眼睛"], ["短时记忆容量", "7 个左右", "70 个以上"], ["转为长期记忆的次数", "100-150 次", "10 次左右"], ["记忆效率", "低（1）", "高（100）"], ["倒背如流", "很困难", "非常轻松"]], "twoSteps": ["1、图像", "2、串联"], "fiveAbilities": ["提升专注力", "激发想象力", "增强自信心", "培养阅读习惯", "超强记忆力"], "chainRules": ["1、具体图像", "2、图像两两相连并接触", "3、一般使用动词联结", "4、相连要用同一幅图像", "5、数量、体积上夸张，跟自己相关，同感"], "chainNotes": ["1、图像与图像之间的联想，要尽量夸张、生动，尽量不要使用“和”“在旁边”等联结方式，否则缺乏动作、缺乏有效联结。", "2、尽量用主动的动作，少用被动语句，被动语句的图像和主动语句的图像是一样的（如“钥匙被鹦鹉拿着”和“鹦鹉拿着钥匙”）。", "3、尽量不要想象某个物体像另一个物体、或变成另一个物体，这样缺乏动作，联结不够紧密（如“电冰箱变成风扇”）。", "4、一组图像串联时要注意顺序，一环扣一环，不要漏掉环节，也不要让前面出现过的图像反复出现。", "5、尽量不把静止的物体拟人化，拟人化会失去图像原有特征，不利于回忆（如“手表拿着玫瑰向卫生纸求婚”不妥）。", "6、联结要化繁为简，尽量用简单的动作联结；遇到复杂资料、简单动作不好联结时，再用故事联结。", "7、图像之间的联想要生动活泼，避免“熊猫牌饮水机”“手表上有玫瑰花图案”这类失去生动形象的说法。", "8、遇到否定句时，忽略否定的意思，直接想相应的图像（如“而无车马喧”，就想车马喧闹的场景）。"], "associationMethods": [["外置法", "箱子——西瓜", "把一个物体放到另一个物体里/上"], ["旋转法", "蝴蝶——手机", "让一个物体围绕另一个物体转动"], ["破坏法", "台灯——杯子", "让一个物体破坏/弄碎另一个物体"], ["包围法", "毛巾——锤子", "一个物体把另一个物体包围起来"], ["主角法", "玉米——洗衣机", "让一个物体充当场景的主角"]], "abstractMethods": [["代替", "春天", "桃花", "用具体事物代替抽象词"], ["谐音", "原谅", "月亮", "用读音相近的具体事物"], ["谐音", "疑惑", "烟火", "用读音相近的具体事物"], ["谐音", "姿态", "子弹", "用读音相近的具体事物"], ["代替", "观念", "老人", "用具体事物代替抽象词"], ["代替", "丰收", "农民", "用具体事物代替抽象词"], ["代替", "休息", "床", "用具体事物代替抽象词"], ["代替", "艺术", "雕像", "用具体事物代替抽象词"], ["加字法", "温度", "温度计", "给抽象词加上一个具体字，组成具象"], ["代替", "装饰", "房间", "用具体事物代替抽象词"]], "assocPractice": [["棒冰", "鞋盒", "棒冰放进鞋盒（外置法）"], ["飘带", "矿泉水", "飘带系住矿泉水（外置法）"], ["西瓜", "汽车", "西瓜装上汽车（外置法）"], ["电脑", "浴缸", "电脑放进浴缸（外置法）"], ["运动鞋", "操场", "运动鞋跑过操场（主角法）"], ["蚂蚁", "勺子", "蚂蚁爬过勺子（主角法）"], ["风扇", "金鱼", "风扇吹动金鱼（旋转法）"], ["草莓", "月亮", "草莓挂在月亮上（外置法）"], ["火车", "红军", "火车上坐着红军（主角法）"], ["牡丹", "云朵", "牡丹开在云朵上（外置法）"], ["稿纸", "白菜", "稿纸上画着白菜（外置法）"], ["蚊子", "鼻子", "蚊子叮在鼻子上（外置法）"], ["眼镜", "毛衣", "眼镜放在毛衣上（外置法）"], ["麻雀", "飞机", "麻雀飞向飞机（旋转法）"], ["白掌", "涂改液", "白掌涂上涂改液（外置法）"], ["手机", "株洲", "手机拍下株洲（主角法）"], ["沙滩", "竹子", "沙滩上种着竹子（外置法）"], ["头痛", "仪器", "头痛时用仪器检查（主角法）"], ["学习", "卡通", "学习画卡通（主角法）"], ["浓密", "铁锤", "浓密的树丛挡着铁锤（外置法）"], ["动车", "可乐", "动车上喝可乐（主角法）"], ["龙井", "洗澡", "龙井茶里洗澡（夸张）"], ["铅笔", "开关", "铅笔按下开关（主角法）"], ["烤鸭", "衬托", "烤鸭衬托餐桌（主角法）"], ["衣柜", "键盘", "衣柜上放着键盘（外置法）"], ["出版社", "斗志", "出版社的标语鼓舞斗志（主角法）"]], "palaceDef": "记忆宫殿别名地点桩，是一系列有固定顺序的空间或物体，主要承载信息和解决顺序问题。记忆阶段，地点桩给图像记忆提供表演的舞台；回忆阶段，地点桩提供提取信息的线索或参照物。", "palaceRules": ["1. 熟悉", "2. 顺序", "3. 富于变化（地点、路径）", "4. 适中（大小、间距、高低、亮暗）", "5. 立体感", "6. 视角"], "palacePreset": {"家里": ["门", "杂物箱", "书柜", "沙发", "窗户", "桌子", "梳妆台", "窗帘", "床", "床头柜"], "教室": ["门", "垃圾箱", "白板", "投影仪", "窗帘", "窗台", "空调", "钢琴", "讲台", "屏幕"]}, "poemSteps": ["1、通读理解", "2、提取转换", "3、绘制成图", "4、闭目忆图"], "strategies36": ["瞒天过海", "围魏救赵", "借刀杀人", "以逸待劳", "趁火打劫", "声东击西", "无中生有", "暗渡陈仓", "隔岸观火", "笑里藏刀", "李代桃僵", "顺手牵羊", "打草惊蛇", "借尸还魂", "调虎离山", "欲擒故纵", "抛砖引玉", "擒贼擒王", "釜底抽薪", "浑水摸鱼", "金蝉脱壳", "关门抓贼", "远交近攻", "假道伐虢", "偷梁换柱", "指桑骂槐", "假痴不癫", "上屋抽梯", "树上开花", "反客为主", "美人计", "空城计", "反间计", "苦肉计", "连环计", "走为上"], "strategyLink": [[1, "树", "瞒天过海", "瞒——馒头"], [2, "鸭子", "围魏救赵", "魏——围巾；赵——赵本山"], [3, "耳朵", "借刀杀人", "借刀杀人：自己不出面，假借别人的手"], [4, "红旗", "以逸待劳", "以逸——雨衣；待劳——待（在大）牢"], [5, "钩子", "趁火打劫", "趁火打劫：乘人之危，捞一把"], [6, "勺子", "声东击西", "东——冬瓜；西——西瓜"], [7, "拐杖", "无中生有", "本来没有却硬说有，凭空捏造"], [8, "葫芦", "暗渡陈仓", "陈仓——陈旧的仓库"], [9, "球拍", "隔岸观火", "隔岸观火：对别人的危难不予援救"], [10, "棒球", "笑里藏刀", "外表和气而内心阴险"], [11, "筷子", "李代桃僵", "李代——礼物袋：代人受过"], [12, "婴儿", "顺手牵羊", "不费劲，乘便得到"]], "serialWords": ["书包", "白菜", "青蛙", "风筝", "白糖", "汤圆", "地球", "星星", "老鼠", "汉堡包", "小提琴", "医院", "算盘", "水晶", "咖啡", "黑板", "金字塔", "休息", "手电筒", "电线", "长城", "玻璃", "毛毛虫", "篱笆", "照片", "胶水", "电棒", "皮鞋", "纸张", "手表"], "memoryTestWords": ["自行车", "奖杯", "火炬", "帆船", "大象", "长颈鹿", "乌龟", "钢琴", "螃蟹", "电吹风", "树叶", "蝴蝶", "恐龙", "溜冰鞋", "沙发", "鳄鱼"], "pi50": "3.14159265358979323846264338327950288419716939937510", "readPractice": ["9816 2507 5179 7732 6877 5123 1210 7509 6574 2160 5090 8720 4825 1847 6623 5250 4447 0774 6011 9052", "2825 9929 6161 3304 1432 9797 9674 7919 0807 1095 3471 2299 4454 9224 6747 4808 0520 8474 8709 1121", "5609 9903 4373 8956 3887 8768 6868 8227 9517 8491 0171 0109 2789 2466 4835 8140 4087 4989 2531 9937", "8922 0750 1264 3077 8137 8480 3749 0058 6965 0029 5233 8054 1834 7102 3480 8663 7154 0004 2266 5795", "14 15 92 65 35 89 79 32 38 46 26 43 38 32 79 50 28 84 19 71 69 39 93 75 10 58 20 97 49 44", "59 23 07 81 64 06 28 62 08 99 86 28 03 48 25 34 21 17 06 79 82 14 80 86 51 32 82 30 66 47", "09 38 44 60 95 50 58 22 31 72 53 59 40 81 28 48 11 17 45 02 84 10 27 01 93 85 21 10 55 59"], "focusNotes": [["黄卡练习", "盯住黄卡中心 30 秒，移开视线看白墙，回忆残像（原课件为视频示范，应用内提供方法说明）。"], ["听力训练", "听一段文字，数出指定字出现的次数（课件示例：数“红”字出现次数）。"], ["听词语做手势", "听词语，快速做出对应手势，训练听觉注意与反应。"], ["舒尔特方格", "在 5×5 方格中按 1-25 的顺序快速点击，记录用时，越短越专注。"], ["数数拍手", "听到指定数字（如 2、4、7）时拍手，训练选择性注意。"]], "listenText1": "夕阳落山不久，西方的天空一片橘红色的映霞，大海也被这霞光染成了红色，而且比天空的景色更要壮观。因为它是活动的，每当一排排波浪涌起的时候，那映照在浪峰上的霞光，又红又亮，简直就像一片片霍霍燃烧着的火焰，闪烁着消失了，而后面的一排又闪烁着、滚动着涌了过来。（数一数“红”字出现了几次）", "listenText2": "天空的霞光渐渐的淡下去了，深红的颜色变成了绯红，绯红又变成了浅红，最后这一切红光都消失了的时候，那突然显得高而远的天空，则呈现出一片肃穆的神色。最早出现的启明星，在这深蓝色的天幕上闪烁起来了，还是那么大，那么亮，整个广漠的天幕上，只有它在那里放射着令人注目的光辉，活像一盏悬挂在高空的明灯。（数一数“红”字出现了几次）"};
+
+// ---------- 基础工具 ----------
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+function loadStats() {
+  try { return JSON.parse(localStorage.getItem('mjStats') || '{}'); }
+  catch (e) { return {}; }
+}
+function saveStats(s) { localStorage.setItem('mjStats', JSON.stringify(s)); }
+function loadReview() {
+  try { return JSON.parse(localStorage.getItem('mjReview') || '[]'); }
+  catch (e) { return []; }
+}
+function saveReview(r) { localStorage.setItem('mjReview', JSON.stringify(r)); }
+function record(mod, ok) {
+  const s = loadStats();
+  s[mod] = s[mod] || { n: 0, ok: 0 };
+  s[mod].n += 1;
+  if (ok) s[mod].ok += 1;
+  saveStats(s);
+}
+
+// ---------- 导航 ----------
+const PAGES = [
+  ['首页', 'home'], ['记数字', 'digit'], ['记单词', 'word'], ['记古诗词', 'poem'],
+  ['记短文', 'text'], ['记忆方法', 'method'], ['专注力', 'focus'], ['统计', 'stats'],
+  ['关于', 'about']
+];
+function show(name) {
+  $('nav').innerHTML = PAGES.map(p =>
+    `<button class="${p[0] === name ? 'active' : ''}" onclick="show('${p[1]}')">${p[0]}</button>`).join('');
+  const fns = { home, digit, word, poem, text, method, focus, stats, about };
+  $('main').innerHTML = fns[name]();
+}
+
+// ---------- 首页 ----------
+function home() {
+  const total = Object.values(D.wordBank).reduce((a, b) => a + b.length, 0);
+  return `
+  <div class="card"><h2>四大练习（点击进入）</h2>
+    <a class="home-entry" onclick="show('digit')"><b>记数字</b><span>数字编码 1-100、数字串记忆、读数练习、圆周率 50 位</span></a>
+    <a class="home-entry" onclick="show('word')"><b>记单词</b><span>小学 / 初中 / 高中共 ${total} 词，看词忆义、看义忆词，每词带记忆提示</span></a>
+    <a class="home-entry" onclick="show('poem')"><b>记古诗词</b><span>${D.poems.length} 首经典古诗，画图记忆法 + 逐句背诵自测</span></a>
+    <a class="home-entry" onclick="show('text')"><b>记短文</b><span>${D.texts.length} 篇经典短文，关键词提取 + 分段记忆练习</span></a>
+  </div>
+  <div class="card"><h2>记忆原理（高效记忆两大步骤）</h2>
+    <p class="muted">${D.twoSteps.join(' → ')}</p>
+    <p class="muted">先把要记的内容转成具体图像，再让图像像锁链一样两两相连、顺序不乱。</p>
+    <p class="muted">右脑图像记忆的短时容量远大于声音记忆，记忆效率可提升百倍。</p>
+  </div>`;
+}
+
+// ---------- 记数字 ----------
+const ds = {};
+function digit() {
+  const codes = Object.entries(D.digitCodes)
+    .map(([k, v]) => `<div class="cell">${esc(k === '0' ? '00' : k)}·${esc(v)}</div>`).join('');
+  return `
+  <div class="card"><h2>一、数字编码表（1-100）</h2>
+    <p class="muted">记数字第一步：把数字转成固定图像，再串联记忆。</p>
+    <div class="grid">${codes}</div>
+  </div>
+  <div class="card"><h2>二、数字串记忆练习</h2>
+    <select id="dLen" onchange="digitNew()">
+      <option value="5">5 位数字</option><option value="8" selected>8 位数字</option>
+      <option value="10">10 位数字</option><option value="12">12 位数字</option>
+    </select>
+    <div class="q" id="dQ">点击“生成数字串”开始</div>
+    <div class="row">
+      <button class="act" onclick="digitNew()">生成数字串</button>
+      <button class="ghost" onclick="digitHint()">显示编码提示</button>
+      <button class="ghost" onclick="digitHide()">隐藏，开始回忆</button>
+      <button class="green" onclick="digitCheck()">核对答案</button>
+    </div>
+    <input id="dAns" placeholder="先按编码转图像串联，再输入回忆的数字串">
+    <div class="tip" id="dTip"></div>
+  </div>
+  <div class="card"><h2>三、读数练习</h2>
+    <select id="rSel" onchange="readShow()">${D.readPractice.map((s, i) =>
+      `<option value="${i}">第 ${i + 1} 组</option>`).join('')}</select>
+    <div class="q" id="rShow"></div>
+    <div class="row">
+      <button class="act" onclick="readShow()">显示数字串</button>
+      <button class="ghost" onclick="readHide()">隐藏，开始自测</button>
+    </div>
+  </div>
+  <div class="card"><h2>四、圆周率 50 位</h2>
+    <p class="muted">用数字编码把圆周率转成图像，一串一串地记。</p>
+    <div class="big" style="font-size:18px;font-weight:700">${esc(D.pi50)}</div>
+  </div>`;
+}
+function digitNew() {
+  const len = +$('dLen').value;
+  let s = '';
+  for (let i = 0; i < len; i++) s += Math.floor(Math.random() * 10);
+  ds.cur = s;
+  $('dQ').textContent = '数字串：' + s + '\n（把每个数字转成编码图像，像锁链一样串起来）';
+  $('dAns').value = '';
+  $('dTip').textContent = '';
+  $('dTip').className = 'tip';
+}
+function digitHint() {
+  if (!ds.cur) return;
+  const enc = [...ds.cur].map(c => c + '→' + D.digitCodes[c]).join('　');
+  $('dTip').textContent = '编码提示：' + enc;
+  $('dTip').className = 'warn';
+}
+function digitHide() { if (ds.cur) $('dQ').textContent = '（已隐藏，按串联画面回忆数字串）'; }
+function digitCheck() {
+  if (!ds.cur) return;
+  const ans = ($('dAns').value || '').replace(/\s/g, '');
+  const ok = ans === ds.cur;
+  record('记数字', ok);
+  $('dTip').textContent = (ok ? '回忆正确！' : '再练一次') + '　（正确答案：' + ds.cur + '）';
+  $('dTip').className = ok ? 'tip' : 'err';
+}
+function readShow() { $('rShow').textContent = D.readPractice[$('rSel').value]; }
+function readHide() { $('rShow').textContent = '（已隐藏，凭记忆按数字编码读出来）'; }
+
+// ---------- 记单词 ----------
+const ws = {};
+function word() {
+  const levels = Object.keys(D.wordBank);
+  return `
+  <div class="card"><h2>一、单词记忆练习（看词忆义 / 看义忆词）</h2>
+    <div class="row">
+      <select id="wLevel" onchange="wordRefresh()">${levels.map((l, i) =>
+        `<option value="${i}"${i === 0 ? ' selected' : ''}>${l}</option>`).join('')}</select>
+      <select id="wMode" onchange="wordNew()">
+        <option value="0">看词忆义（显示单词，回忆释义）</option>
+        <option value="1">看义忆词（显示释义，回忆单词）</option>
+      </select>
+    </div>
+    <div class="q" id="wQ">点击“出题”开始</div>
+    <div class="row">
+      <button class="act" onclick="wordNew()">出题</button>
+      <button class="ghost" onclick="wordMeaning()">显示释义</button>
+      <button class="ghost" onclick="wordSubmit()">提交单词</button>
+      <button class="ghost" onclick="wordTip()">看记忆提示</button>
+    </div>
+    <input id="wAns" placeholder="看义忆词模式：输入回忆的单词">
+    <div class="row">
+      <button class="green" onclick="wordGrade(true)">记得</button>
+      <button class="red" onclick="wordGrade(false)">再记</button>
+    </div>
+    <div class="tip" id="wTip"></div>
+  </div>
+  <div class="card"><h2>二、单词库浏览（点击单词看记忆提示）</h2>
+    <div class="list" id="wList"></div>
+  </div>`;
+}
+function wordRefresh() {
+  const lv = Object.keys(D.wordBank)[$('wLevel').value];
+  const list = D.wordBank[lv];
+  $('wList').innerHTML = list.map((w, i) =>
+    `<div data-tip="${esc(w[4])}" onclick="wTipShow(this)"><b>${esc(w[0])}</b>　${esc(w[1])}　${esc(w[2])}　${esc(w[3])}</div>`).join('');
+}
+function wTipShow(el) {
+  $('wTip').textContent = '记忆提示：' + el.dataset.tip;
+  $('wTip').className = 'tip';
+}
+function wordNew() {
+  const lv = Object.keys(D.wordBank)[$('wLevel').value];
+  const list = D.wordBank[lv];
+  const review = loadReview().filter(x => x[0] && list.some(w => w[0] === x[0]));
+  const pool = review.length ? review : list;
+  ws.cur = pool[Math.floor(Math.random() * pool.length)];
+  const [w, ph, pos, meaning] = ws.cur;
+  if ($('wMode').value === '0') $('wQ').textContent = w + '　' + ph + '　' + pos;
+  else $('wQ').textContent = pos + '　' + meaning;
+  $('wAns').value = '';
+  $('wTip').textContent = '';
+  $('wTip').className = 'tip';
+}
+function wordMeaning() {
+  if (!ws.cur) return;
+  const [w, ph, pos, meaning, tip] = ws.cur;
+  $('wTip').textContent = '释义：' + pos + '　' + meaning + '　【记忆提示：' + tip + '】';
+  $('wTip').className = 'tip';
+}
+function wordTip() {
+  if (!ws.cur) return;
+  $('wTip').textContent = '记忆提示：' + ws.cur[4];
+  $('wTip').className = 'warn';
+}
+function wordSubmit() {
+  if (!ws.cur) return;
+  const ans = ($('wAns').value || '').trim().toLowerCase();
+  const ok = ans === ws.cur[0].toLowerCase();
+  $('wTip').textContent = (ok ? '答对了！' : '再记一次') + '　（正确单词：' + ws.cur[0] + '）';
+  $('wTip').className = ok ? 'tip' : 'err';
+}
+function wordGrade(ok) {
+  if (!ws.cur) return;
+  record('记单词', ok);
+  let r = loadReview();
+  if (!ok) {
+    if (!r.some(x => x[0] === ws.cur[0])) r.push(ws.cur);
+  } else {
+    r = r.filter(x => x[0] !== ws.cur[0]);
+  }
+  saveReview(r);
+  $('wTip').textContent = (ok ? '已记为：记得' : '已记为：再记（已加入复习）') + '　（单词：' + ws.cur[0] + '）';
+  $('wTip').className = ok ? 'tip' : 'err';
+}
+
+// ---------- 记古诗词 ----------
+function poem() {
+  return `
+  <div class="card"><h2>一、画图记忆法</h2>
+    <p class="muted">四步：${D.poemSteps.join(' → ')}。读通理解后，把每句诗提取成图像画在脑中，再闭目按图回忆。</p>
+  </div>
+  <div class="card"><h2>二、古诗库（${D.poems.length} 首，选一首查看与背诵）</h2>
+    <select id="pSel" onchange="poemShow()">${D.poems.map((p, i) =>
+      `<option value="${i}">${esc(p.title)}（${esc(p.author)}）</option>`).join('')}</select>
+    <div class="row" style="margin-top:8px">
+      <button class="act" onclick="poemShow()">原文 / 译文 / 图解</button>
+      <button class="green" onclick="poemQuiz()">背诵自测</button>
+      <button class="ghost" onclick="poemCheck()">显示原文核对</button>
+      <button class="green" onclick="poemGrade(true)">记得</button>
+      <button class="red" onclick="poemGrade(false)">再记</button>
+    </div>
+    <div class="poem-lines" id="pBody" style="margin-top:10px"></div>
+    <div class="tip" id="pTip"></div>
+  </div>`;
+}
+function poemShow() {
+  const p = D.poems[$('pSel').value];
+  let html = '《' + p.title + '》　' + p.author + '\n' + p.lines;
+  if (p.translation) html += '\n\n【译文】' + p.translation;
+  if (p.notes) html += '\n\n【注释】' + p.notes;
+  if (p.image_hint) html += '\n\n【图解提示】' + p.image_hint;
+  $('pBody').textContent = html;
+  $('pTip').textContent = '';
+  $('pTip').className = 'tip';
+}
+function poemQuiz() {
+  const p = D.poems[$('pSel').value];
+  const hints = p.lines.split('\n').map(l => (l.length > 2 ? l.slice(0, 2) + '……' : l));
+  $('pBody').textContent = '《' + p.title + '》自测：先想图，再回忆每句\n\n' + hints.join('\n');
+  $('pTip').textContent = '先通读理解，再在脑海中把每句画成图，最后闭目回忆。';
+  $('pTip').className = 'warn';
+}
+function poemCheck() {
+  const p = D.poems[$('pSel').value];
+  $('pBody').textContent = '《' + p.title + '》原文核对\n\n' + p.lines;
+  $('pTip').textContent = '核对后请自评：记得 / 再记。';
+  $('pTip').className = 'tip';
+}
+function poemGrade(ok) {
+  const p = D.poems[$('pSel').value];
+  record('记古诗', ok);
+  $('pTip').textContent = (ok ? '已记为：记得' : '已记为：再记') + '　《' + p.title + '》';
+  $('pTip').className = ok ? 'tip' : 'err';
+}
+
+// ---------- 记短文 ----------
+const ts = { idx: 0 };
+function text() {
+  return `
+  <div class="card"><h2>一、记忆短文（${D.texts.length} 篇）</h2>
+    <select id="tSel" onchange="textShowAll()">${D.texts.map((t, i) =>
+      `<option value="${i}">${esc(t.title)}（${esc(t.author)}）</option>`).join('')}</select>
+    <div class="warn" id="tTipBox" style="margin-top:8px"></div>
+    <p class="tip" style="margin-top:6px"><b>关键词：</b><span id="tKeys"></span></p>
+  </div>
+  <div class="card"><h2>二、正文与分段练习</h2>
+    <div class="scroll"><div id="tBody" class="para"></div></div>
+    <div class="row" style="margin-top:8px">
+      <button class="act" onclick="textShowAll()">显示全文</button>
+      <button class="ghost" onclick="textQuiz()">开始自测（只看关键词）</button>
+      <button class="ghost" onclick="textPara()">逐段核对</button>
+      <button class="green" onclick="textGrade(true)">记得</button>
+      <button class="red" onclick="textGrade(false)">再记</button>
+    </div>
+    <div class="tip" id="tTip2"></div>
+  </div>`;
+}
+function textShowAll() {
+  const t = D.texts[$('tSel').value];
+  ts.idx = 0;
+  $('tTipBox').textContent = '【记忆提示】' + t.tip;
+  $('tKeys').textContent = t.keywords.join('　→　');
+  $('tBody').textContent = t.paragraphs.map((p, i) => (i + 1) + '、' + p).join('\n\n');
+  $('tTip2').textContent = '';
+  $('tTip2').className = 'tip';
+}
+function textQuiz() {
+  ts.idx = 0;
+  $('tBody').textContent = '（已隐藏正文，先看关键词，在脑中逐段回忆，再点“逐段核对”）';
+  $('tTip2').textContent = '先在脑中把关键词串成画面，回忆每段内容。';
+  $('tTip2').className = 'warn';
+}
+function textPara() {
+  const t = D.texts[$('tSel').value];
+  if (ts.idx >= t.paragraphs.length) {
+    $('tTip2').textContent = '已全部核对。点“显示全文”可再次通读。';
+    $('tTip2').className = 'tip';
+    return;
+  }
+  $('tBody').textContent = '第 ' + (ts.idx + 1) + ' 段：' + t.paragraphs[ts.idx];
+  ts.idx += 1;
+  record('记短文');
+  $('tTip2').textContent = '已核对第 ' + ts.idx + ' 段，继续回忆下一段。';
+  $('tTip2').className = 'tip';
+}
+function textGrade(ok) {
+  const t = D.texts[$('tSel').value];
+  record('记短文', ok);
+  $('tTip2').textContent = (ok ? '已记为：记得' : '已记为：再记') + '　《' + t.title + '》';
+  $('tTip2').className = ok ? 'tip' : 'err';
+}
+
+// ---------- 记忆方法 ----------
+function tbl3(rows) {
+  const heads = ['方法', '示例', '要领'];
+  const trs = rows.map(r => '<tr>' + r.map(c => '<td>' + esc(c) + '</td>').join('') + '</tr>').join('');
+  return '<table><tr>' + heads.map(h => '<th>' + h + '</th>').join('') + '</tr>' + trs + '</table>';
+}
+function tbl4(rows, heads) {
+  const trs = rows.map(r => '<tr>' + r.map(c => '<td>' + esc(c) + '</td>').join('') + '</tr>').join('');
+  return '<table><tr>' + heads.map(h => '<th>' + h + '</th>').join('') + '</tr>' + trs + '</table>';
+}
+function method() {
+  const overview = D.methodsOverview.map(m =>
+    `<div class="cell" style="text-align:left;padding:8px"><b>${esc(m[0])}</b><br><span class="muted">${esc(m[1])}</span></div>`).join('');
+  const chain = `<p class="muted">定义：将资料转化成图像，像锁链一样一个接一个地连接起来，顺序不乱地记录下来。</p>
+    <p class="muted">规则：${D.chainRules.join('；')}</p>
+    <h3>注意要点</h3>
+    <ul>${D.chainNotes.map(n => '<li class="muted">' + esc(n) + '</li>').join('')}</ul>`;
+  const palace = `<p class="muted">${esc(D.palaceDef)}</p>
+    <p class="muted">选取规则：${D.palaceRules.join('；')}</p>
+    <p class="muted">家里：${D.palacePreset['家里'].join('、')}</p>
+    <p class="muted">教室：${D.palacePreset['教室'].join('、')}</p>`;
+  const s36 = `<div class="grid">${D.strategies36.map((s, i) =>
+    `<div class="cell">${i + 1}·${esc(s)}</div>`).join('')}</div>`;
+  return `
+  <div class="card"><h2>一、记忆方法总览</h2><div class="grid">${overview}</div></div>
+  <div class="card"><h2>二、锁链奇像法（串联联想）</h2>${chain}</div>
+  <div class="card"><h2>三、对应联想五法</h2>${tbl3(D.associationMethods)}</div>
+  <div class="card"><h2>四、抽象转具象（口诀：提鞋赠刀王）</h2>${tbl4(D.abstractMethods, ['方法', '抽象词', '具象图像', '说明'])}</div>
+  <div class="card"><h2>五、记忆宫殿（地点桩）</h2>${palace}</div>
+  <div class="card"><h2>六、三十六计</h2>${s36}
+    <h3>前 12 计数字编码联想</h3>${tbl4(D.strategyLink, ['数字', '编码', '计名', '联想'])}
+  </div>`;
+}
+
+// ---------- 专注力 ----------
+const sh = { seq: [], expected: 1, start: 0 };
+function focus() {
+  return `
+  <div class="card"><h2>专注力训练说明</h2>
+    ${D.focusNotes.map(n => '<p class="muted"><b>' + esc(n[0]) + '：</b>' + esc(n[1]) + '</p>').join('')}
+  </div>
+  <div class="card"><h2>舒尔特方格（5×5）</h2>
+    <div class="grid" id="shGrid" style="grid-template-columns:repeat(5,1fr)"></div>
+    <div class="tip" id="shTip"></div>
+    <div class="row" style="margin-top:8px">
+      <button class="act" onclick="shulteStart()">开始</button>
+      <button class="ghost" onclick="shulteReset()">重置</button>
+    </div>
+  </div>
+  <div class="card"><h2>数数拍手（听到指定数字就拍手）</h2>
+    <select id="clTarget">
+      <option value="0">2、4、7</option><option value="1">3、6、9</option>
+      <option value="2">1、4、7</option><option value="3">5、7、9</option>
+    </select>
+    <div class="big" id="clNum">点击“开始”训练</div>
+    <div class="row">
+      <button class="green" onclick="clapDo()">拍手</button>
+      <button class="act" onclick="clapStart()">开始</button>
+      <button class="ghost" onclick="clapReset()">重置</button>
+    </div>
+    <div class="tip" id="clTip"></div>
+  </div>
+  <div class="card"><h2>16 词记忆测试（按顺序点击）</h2>
+    <div class="grid" id="memGrid" style="grid-template-columns:repeat(4,1fr)"></div>
+    <div class="tip" id="memTip"></div>
+    <div class="row" style="margin-top:8px">
+      <button class="act" onclick="memStart()">开始回忆</button>
+      <button class="ghost" onclick="memReset()">重置</button>
+    </div>
+  </div>
+  <div class="card"><h2>听字训练（数一数指定字出现几次）</h2>
+    <div class="scroll"><div class="para" id="listenText">${esc(D.listenText1)}</div></div>
+    <div class="row" style="margin-top:8px">
+      <button class="act" onclick="listenSet(0)">第 1 段（数“红”）</button>
+      <button class="act" onclick="listenSet(1)">第 2 段（数“红”）</button>
+    </div>
+  </div>`;
+}
+function shulteReset() {
+  sh.expected = 1;
+  $('shGrid').innerHTML = Array.from({ length: 25 }, () => '<div class="cellbtn"></div>').join('');
+  $('shTip').textContent = '';
+}
+function shulteStart() {
+  shulteReset();
+  sh.seq = Array.from({ length: 25 }, (_, i) => i + 1);
+  for (let i = sh.seq.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [sh.seq[i], sh.seq[j]] = [sh.seq[j], sh.seq[i]];
+  }
+  $('shGrid').innerHTML = sh.seq.map(n =>
+    `<div class="cellbtn" onclick="shulteClick(this)">${n}</div>`).join('');
+  sh.start = Date.now();
+  $('shTip').textContent = '按 1→25 的顺序依次点击。';
+  $('shTip').className = 'tip';
+}
+function shulteClick(cell) {
+  if (sh.expected > 25) return;
+  const n = parseInt(cell.textContent, 10);
+  if (n === sh.expected) {
+    sh.expected += 1;
+    cell.className = 'cellbtn done';
+    cell.textContent = '✓';
+    cell.onclick = null;
+    if (sh.expected === 26) {
+      const t = ((Date.now() - sh.start) / 1000).toFixed(1);
+      record('舒尔特', true);
+      $('shTip').textContent = '完成！用时 ' + t + ' 秒（越短越专注）';
+      $('shTip').className = 'tip';
+    }
+  } else {
+    $('shTip').textContent = '点错了，从 1 开始按顺序点。';
+    $('shTip').className = 'err';
+  }
+}
+
+const cl = { seq: [], idx: 0, timer: null, right: 0, miss: 0, wrong: 0, curTarget: false, prevTarget: false };
+function clapReset() {
+  if (cl.timer) { clearInterval(cl.timer); cl.timer = null; }
+  cl.idx = 0; cl.right = 0; cl.miss = 0; cl.wrong = 0;
+  cl.curTarget = false; cl.prevTarget = false;
+  $('clNum').textContent = '点击“开始”训练';
+  $('clTip').textContent = '';
+}
+function clapStart() {
+  clapReset();
+  cl.seq = Array.from({ length: 30 }, (_, i) => i + 1);
+  cl.timer = setInterval(clapNext, 1000);
+}
+function clapNext() {
+  if (cl.idx >= cl.seq.length) {
+    clearInterval(cl.timer); cl.timer = null;
+    record('拍手训练', cl.right >= 8);
+    $('clNum').textContent = '完成！';
+    $('clTip').textContent = '正确拍手 ' + cl.right + ' 次，漏拍 ' + cl.miss + ' 次，误拍 ' + cl.wrong + ' 次。';
+    $('clTip').className = 'tip';
+    return;
+  }
+  const num = cl.seq[cl.idx];
+  const sets = { 0: [2, 4, 7], 1: [3, 6, 9], 2: [1, 4, 7], 3: [5, 7, 9] };
+  const tset = new Set(sets[+$('clTarget').value]);
+  if (cl.prevTarget) cl.miss += 1;
+  $('clNum').textContent = '数字：' + num;
+  cl.curTarget = tset.has(num);
+  cl.prevTarget = cl.curTarget;
+  cl.idx += 1;
+}
+function clapDo() {
+  if (cl.timer === null) { $('clTip').textContent = '先点击“开始”。'; return; }
+  if (cl.curTarget) {
+    cl.right += 1; cl.prevTarget = false;
+    $('clTip').textContent = '拍得对！'; $('clTip').className = 'tip';
+  } else {
+    cl.wrong += 1;
+    $('clTip').textContent = '这个数字不用拍手。'; $('clTip').className = 'err';
+  }
+}
+
+const mem = { pos: 0, start: 0 };
+function memReset() {
+  mem.pos = 0;
+  $('memGrid').innerHTML = D.memoryTestWords.map(w =>
+    '<div class="cellbtn">' + esc(w) + '</div>').join('');
+  $('memTip').textContent = '';
+}
+function memStart() {
+  memReset();
+  $('memGrid').innerHTML = Array.from({ length: 16 }, () =>
+    '<div class="cellbtn" onclick="memClick(this)"></div>').join('');
+  mem.start = Date.now();
+  $('memTip').textContent = '按记忆顺序点击格子（点对位置会显示词语）。';
+  $('memTip').className = 'tip';
+}
+function memClick(cell) {
+  if (mem.pos >= 16) return;
+  const idx = [...$('memGrid').children].indexOf(cell);
+  if (idx === mem.pos) {
+    cell.textContent = D.memoryTestWords[mem.pos];
+    cell.className = 'cellbtn done';
+    cell.onclick = null;
+    mem.pos += 1;
+    if (mem.pos === 16) {
+      const t = ((Date.now() - mem.start) / 1000).toFixed(1);
+      record('记忆测试', true);
+      $('memTip').textContent = '全部按顺序点完！用时 ' + t + ' 秒。';
+      $('memTip').className = 'tip';
+    }
+  } else {
+    $('memTip').textContent = '顺序不对，回忆原序列再试。';
+    $('memTip').className = 'err';
+  }
+}
+function listenSet(i) { $('listenText').textContent = i === 0 ? D.listenText1 : D.listenText2; }
+
+// ---------- 统计 ----------
+function stats() {
+  const s = loadStats();
+  const review = loadReview();
+  const reviewCount = review.length;
+  if (!Object.keys(s).length) {
+    return '<div class="card"><h2>训练记录</h2><p class="muted">还没有训练记录，去四大练习模块练一练吧。</p></div>';
+  }
+  const order = ['记数字', '记单词', '记古诗', '记短文', '舒尔特', '拍手训练', '记忆测试'];
+  const rows = order.filter(k => s[k]).map(k => {
+    const rate = s[k].n ? Math.round(s[k].ok * 100 / s[k].n) : 0;
+    return '<tr><td>' + k + '</td><td>' + s[k].n + '</td><td>' + s[k].ok + '</td><td>' + rate + '%</td></tr>';
+  }).join('');
+  const head = '<div class="card"><h2>训练记录（保存在本机浏览器）</h2>';
+  const reviewLine = reviewCount ? '<p class="tip">待复习单词：<b>' + reviewCount + '</b> 个（记单词时优先出现）</p>' : '';
+  return head + reviewLine +
+    '<table><tr><th>模块</th><th>次数</th><th>正确/记得</th><th>正确率</th></tr>' + rows + '</table></div>';
+}
+
+// ---------- 关于 ----------
+function about() {
+  return `
+  <div class="card about">
+    <h2>关于 记忆法训练助手</h2>
+    <p>基于快速记忆法（数字编码、串联联想、记忆宫殿、画图记忆等）的记忆训练工具，
+       覆盖<b>记数字、记单词、记古诗词、记短文</b>四大场景，手机、电脑通用，离线可用。</p>
+    <h3>核心功能</h3>
+    <ul>
+      <li>记数字：1-100 数字编码、数字串记忆、读数练习、圆周率 50 位</li>
+      <li>记单词：小学 / 初中 / 高中 576 词，看词忆义、看义忆词，未掌握词自动复习</li>
+      <li>记古诗词：50 首经典古诗，画图记忆法 + 逐句背诵自测</li>
+      <li>记短文：12 篇经典短文，关键词提取 + 分段记忆练习</li>
+      <li>记忆方法、专注力训练、训练统计</li>
+    </ul>
+    <h3>产品与商业</h3>
+    <p>本工具可免费使用，也支持<b>私有化部署、内容定制与教育授权</b>，
+       详见仓库 README 与 <code>docs/BUSINESS.md</code>。数据与逻辑全部内嵌，无依赖、无广告、可离线运行。</p>
+    <p class="muted">训练记录保存在本机浏览器（localStorage），不上传任何数据。</p>
+  </div>`;
+}
+
+show('home');
+</script>
+<script>
+if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js')); }
+</script>
+</body>
+</html>

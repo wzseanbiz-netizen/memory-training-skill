@@ -1,0 +1,20 @@
+{
+  "name": "记忆法训练助手",
+  "short_name": "记忆训练",
+  "description": "记数字、记单词、记古诗词、记短文的记忆训练工具，手机电脑通用，离线可用",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f2f4f8",
+  "theme_color": "#24406e",
+  "lang": "zh-CN",
+  "icons": [
+    {
+      "src": "assets/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
